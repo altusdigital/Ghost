@@ -1,10 +1,8 @@
 const sinon = require('sinon');
-const nock = require('nock');
 const mail = require('../../../../../core/server/services/mail');
 const settingsCache = require('../../../../../core/shared/settings-cache');
 const configUtils = require('../../../../utils/config-utils');
 const urlUtils = require('../../../../../core/shared/url-utils').default;
-const logging = require('@tryghost/logging');
 let mailer;
 const assert = require('node:assert/strict');
 const { assertExists } = require('../../../../utils/assertions');
@@ -346,97 +344,8 @@ describe('Mail: Ghostmailer', function () {
     });
   });
 
-  describe('Mailgun tagging', function () {
-    beforeEach(function () {
-      configUtils.set({ mail: { transport: 'stub' } });
-    });
-
-    it('should add site-based tag when using Mailgun, site ID exists, and email tracking is enabled', async function () {
-      configUtils.set({
-        hostSettings: { siteId: '123123' },
-      });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(true);
-
-      mailer = new mail.GhostMailer();
-      // Mock the state to simulate Mailgun transport
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert(Array.isArray(sentMessage['o:tag']));
-      assert(sentMessage['o:tag'].includes('transactional-email'));
-      assert(sentMessage['o:tag'].includes('blog-123123'));
-      assert.equal(sentMessage['o:tracking-opens'], true);
-    });
-
-    it('should add tags but not enable open tracking when email tracking is disabled', async function () {
-      configUtils.set({
-        hostSettings: { siteId: '123123' },
-      });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(false);
-
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert(Array.isArray(sentMessage['o:tag']));
-      assert(sentMessage['o:tag'].includes('transactional-email'));
-      assert(sentMessage['o:tag'].includes('blog-123123'));
-      assert.equal(sentMessage['o:tracking-opens'], undefined);
-    });
-
-    it('should enable Mailgun open tracking when explicitly requested', async function () {
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(false);
-
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-        trackOpens: true,
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert.equal(sentMessage['o:tracking-opens'], true);
-      assert.equal(sentMessage.trackOpens, undefined);
-    });
-
-    it('should not enable Mailgun open tracking when explicitly disabled', async function () {
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(true);
-
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-        trackOpens: false,
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert.equal(sentMessage['o:tracking-opens'], undefined);
-      assert.equal(sentMessage.trackOpens, undefined);
-    });
-
-    it('should explicitly disable Mailgun open and click tracking for transactional messages that require it', async function () {
+  describe('retired Mailgun transport', function () {
+    it('does not call the Mailgun API when mail.transport is mailgun', async function () {
       configUtils.set({
         mail: {
           transport: 'mailgun',
@@ -444,64 +353,33 @@ describe('Mail: Ghostmailer', function () {
           options: { auth: { api_key: 'key', domain: 'domain.com' } },
         },
       });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(true);
-
-      // The transport whitelists and serialises the message before it reaches Mailgun,
-      // so assert on the request body rather than the object handed to sendMail
-      const sendMock = nock('https://api.mailgun.net')
-        .post('/v3/domain.com/messages', function (body) {
-          const regexList = [
-            /form-data; name="o:tracking"\r?\n\r?\nno\r?\n--/m,
-            /form-data; name="o:tracking-opens"\r?\n\r?\nno\r?\n--/m,
-            /form-data; name="o:tracking-clicks"\r?\n\r?\nno\r?\n--/m,
-          ];
-          return (
-            regexList.every((regex) => regex.test(body)) && !/name="disableTracking"/.test(body)
-          );
-        })
-        .reply(200, { id: '<message-id@domain.com>', message: 'Queued. Thank you.' });
 
       mailer = new mail.GhostMailer();
+      const sendMailSpy = sandbox.stub(mailer, 'sendMail').resolves({});
 
       await mailer.send({
         to: 'recipient@example.com',
         subject: 'Gift delivery',
         html: 'content',
         disableTracking: true,
-      });
-
-      assert(sendMock.isDone());
-    });
-
-    it('should not add site ID tag when site ID is missing', async function () {
-      configUtils.set({
-        hostSettings: {}, // No siteId
-      });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(true);
-
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
+        tags: ['member-welcome-email'],
       });
 
       const sentMessage = sendMailSpy.firstCall.args[0];
-      assert(sentMessage['o:tag'].includes('transactional-email'));
-      assert(!sentMessage['o:tag'].includes('blog-123123'));
+      assert.equal(sentMessage['o:tag'], undefined);
+      assert.equal(sentMessage['o:tracking'], undefined);
+      assert.equal(sentMessage['o:tracking-opens'], undefined);
+      assert.equal(sentMessage['h:Sender'], undefined);
+      assert.equal(mailer.state.usingDirect, true);
     });
 
-    it('should include custom tags passed by the caller', async function () {
+    it('should not add Mailgun tags on the stub transport', async function () {
       configUtils.set({
-        hostSettings: { siteId: '123123' },
+        mail: { transport: 'stub' },
+        hostSettings: { siteId: '999999' },
       });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(false);
 
       mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
       const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
 
       await mailer.send({
@@ -509,83 +387,14 @@ describe('Mail: Ghostmailer', function () {
         subject: 'test',
         html: 'content',
         tags: ['member-welcome-email'],
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert(sentMessage['o:tag'].includes('transactional-email'));
-      assert(sentMessage['o:tag'].includes('member-welcome-email'));
-      assert.equal(sentMessage.tags, undefined);
-      assert.equal(sentMessage.forceTextContent, undefined);
-    });
-
-    it('should truncate tags to Mailgun maximum and log warning', async function () {
-      configUtils.set({
-        hostSettings: { siteId: '123123' },
-      });
-      sandbox.stub(settingsCache, 'get').withArgs('email_track_opens').returns(false);
-      const warnStub = sandbox.stub(logging, 'warn');
-
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-        tags: ['tag-1', 'tag-2', 'tag-3', 'tag-4', 'tag-5', 'tag-6', 'tag-7', 'tag-8', 'tag-9'],
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert.deepEqual(sentMessage['o:tag'], [
-        'ghost-email',
-        'transactional-email',
-        'blog-123123',
-        'tag-1',
-        'tag-2',
-        'tag-3',
-        'tag-4',
-        'tag-5',
-        'tag-6',
-        'tag-7',
-      ]);
-      sinon.assert.called(warnStub);
-    });
-
-    it('should copy headers to h: prefixed keys for Mailgun transport', async function () {
-      mailer = new mail.GhostMailer();
-      mailer.state.usingMailgun = true;
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-      sandbox.stub(settingsCache, 'get').returns(false);
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
-      });
-
-      const sentMessage = sendMailSpy.firstCall.args[0];
-      assert.ok(sentMessage['h:Sender'], 'h:Sender should be set');
-      assert.equal(sentMessage['h:Sender'], sentMessage.from);
-    });
-
-    it('should not add tag when not using Mailgun transport', async function () {
-      configUtils.set({
-        hostSettings: { siteId: '999999' },
-      });
-
-      mailer = new mail.GhostMailer();
-      // usingMailgun defaults to false when using stub transport
-      const sendMailSpy = sandbox.stub(mailer.transport, 'sendMail').resolves({});
-
-      await mailer.send({
-        to: 'user@example.com',
-        subject: 'test',
-        html: 'content',
+        trackOpens: true,
       });
 
       const sentMessage = sendMailSpy.firstCall.args[0];
       assert.equal(sentMessage['o:tag'], undefined);
+      assert.equal(sentMessage['o:tracking-opens'], undefined);
+      assert.equal(sentMessage.tags, undefined);
+      assert.equal(sentMessage.trackOpens, undefined);
     });
   });
 });

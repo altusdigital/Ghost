@@ -7,7 +7,6 @@ const errors = require('@tryghost/errors');
 const tpl = require('@tryghost/tpl');
 const settingsCache = require('../../../shared/settings-cache');
 const urlUtils = require('../../../shared/url-utils').default;
-const metrics = require('@tryghost/metrics');
 const emailAddress = require('../email-address');
 const messages = {
   title: 'Ghost at {domain}',
@@ -18,8 +17,6 @@ const messages = {
   messageSent: 'Message sent. Double check inbox and spam folder!',
 };
 const emailAddressParser = require('../email-address/email-address-parser');
-const DEFAULT_TAGS = ['ghost-email', 'transactional-email'];
-const MAX_MAILGUN_TAGS = 10;
 
 function getDomain() {
   const domain = urlUtils
@@ -120,13 +117,18 @@ module.exports = class GhostMailer {
 
     let transport = (config.get('mail') && config.get('mail').transport) || 'direct';
     transport = transport.toLowerCase();
+    if (transport === 'mailgun') {
+      logging.warn(
+        '[MAIL] The Mailgun transport has been removed. Configure Cloudflare Email, or choose another mail transport.',
+      );
+      transport = 'direct';
+    }
 
     // nodemailer mutates the options passed to createTransport
     const options = (config.get('mail') && _.clone(config.get('mail').options)) || {};
 
     this.state = {
       usingDirect: transport === 'direct',
-      usingMailgun: transport === 'mailgun',
     };
     this.transport = nodemailer(transport, options);
   }
@@ -140,9 +142,9 @@ module.exports = class GhostMailer {
    * @param {string} [message.replyTo]
    * @param {string} [message.from] - sender email address
    * @param {string} [message.text] - text version of this message
-   * @param {string[]} [message.tags] - optional additional Mailgun tags
-   * @param {boolean} [message.trackOpens] - per-message override for Mailgun open tracking
-   * @param {boolean} [message.disableTracking] - explicitly disable Mailgun open and click tracking
+   * @param {string[]} [message.tags] - ignored; Cloudflare does not take Mailgun tags
+   * @param {boolean} [message.trackOpens] - ignored; newsletter opens use the Ghost pixel
+   * @param {boolean} [message.disableTracking] - ignored; Cloudflare sends are not Mailgun-tracked
    * @param {Record<string, string>} [message.headers] - optional additional email headers (merged with defaults)
    * @param {boolean} [message.forceTextContent] - maps to generateTextFromHTML nodemailer option
    * which is: "if set to true uses HTML to generate plain text body part from the HTML if the text is not defined"
@@ -171,30 +173,6 @@ module.exports = class GhostMailer {
         headers: message.headers,
       });
     }
-    if (this.state.usingMailgun) {
-      const tags = this.getTags(message.tags);
-      if (tags.length > 0) {
-        messageToSend['o:tag'] = tags;
-      }
-      const trackOpens =
-        typeof message.trackOpens === 'boolean'
-          ? message.trackOpens
-          : settingsCache.get('email_track_opens');
-      // nodemailer-mailgun-transport drops falsy option values, so an explicit
-      // opt-out must be Mailgun's string form rather than boolean false
-      if (message.disableTracking === true) {
-        messageToSend['o:tracking'] = 'no';
-        messageToSend['o:tracking-opens'] = 'no';
-        messageToSend['o:tracking-clicks'] = 'no';
-      } else if (trackOpens) {
-        messageToSend['o:tracking-opens'] = true;
-      }
-      if (messageToSend.headers) {
-        for (const [key, value] of Object.entries(messageToSend.headers)) {
-          messageToSend[`h:${key}`] = value;
-        }
-      }
-    }
 
     const response = await this.sendMail(messageToSend);
 
@@ -206,24 +184,9 @@ module.exports = class GhostMailer {
   }
 
   async sendMail(message) {
-    const startTime = Date.now();
     try {
-      const response = await this.transport.sendMail(message);
-      if (this.state.usingMailgun) {
-        metrics.metric('mailgun-send-transactional-mail', {
-          value: Date.now() - startTime,
-          statusCode: 200,
-        });
-      }
-
-      return response;
+      return await this.transport.sendMail(message);
     } catch (err) {
-      if (this.state.usingMailgun) {
-        metrics.metric('mailgun-send-transactional-mail', {
-          value: Date.now() - startTime,
-          statusCode: err.status,
-        });
-      }
       throw createMailError({
         message: tpl(messages.reason, { reason: err.message || err }),
         err,
@@ -249,42 +212,5 @@ module.exports = class GhostMailer {
     }
 
     return tpl(messages.messageSent);
-  }
-
-  /**
-   * Builds the Mailgun tag list from defaults, site tag, and optional extra tags.
-   * @param {string[]} [additionalTags]
-   * @returns {string[]}
-   */
-  getTags(additionalTags = []) {
-    const tagList = [...DEFAULT_TAGS];
-
-    const siteId = config.get('hostSettings:siteId');
-    if (siteId) {
-      tagList.push(`blog-${siteId}`);
-    }
-
-    if (Array.isArray(additionalTags) && additionalTags.length > 0) {
-      const cleanedTags = additionalTags
-        .filter((tag) => typeof tag === 'string')
-        .map((tag) => tag.trim().toLowerCase())
-        .filter((tag) => tag.length > 0);
-
-      tagList.push(...cleanedTags);
-    }
-
-    const uniqueTags = [...new Set(tagList)];
-
-    if (uniqueTags.length > MAX_MAILGUN_TAGS) {
-      const keptTags = uniqueTags.slice(0, MAX_MAILGUN_TAGS);
-
-      logging.warn(
-        `[MAIL] Mailgun tag count exceeded ${MAX_MAILGUN_TAGS}; truncating tags from ${uniqueTags.length} to ${MAX_MAILGUN_TAGS}.`,
-      );
-
-      return keptTags;
-    }
-
-    return uniqueTags;
   }
 };
