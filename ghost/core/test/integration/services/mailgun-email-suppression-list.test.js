@@ -3,7 +3,7 @@ const { agentProvider, fixtureManager } = require('../../utils/e2e-framework');
 const assert = require('node:assert/strict');
 const DomainEvents = require('@tryghost/domain-events');
 
-const MailgunClient = require('../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../core/server/services/lib/cloudflare-email-client');
 const emailAnalytics = require('../../../core/server/services/email-analytics');
 const models = require('../../../core/server/models');
 
@@ -27,10 +27,12 @@ describe('MailgunEmailSuppressionList', function () {
     await fixtureManager.init('newsletters', 'members:newsletters', 'members:emails:failed');
     await agent.loginAsOwner();
 
-    sinon.stub(MailgunClient.prototype, 'fetchEvents').callsFake(async function (_, batchHandler) {
-      const normalizedEvents = (events.map(this.normalizeEvent) || []).filter((e) => !!e);
-      return [await batchHandler(normalizedEvents)];
-    });
+    sinon
+      .stub(CloudflareEmailClient.prototype, 'fetchEvents')
+      .callsFake(async function (_, batchHandler) {
+        const normalizedEvents = (events.map(this.normalizeEvent) || []).filter((e) => !!e);
+        return [await batchHandler(normalizedEvents)];
+      });
   });
 
   afterAll(function () {
@@ -43,7 +45,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 0);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const timestamp = new Date(2000, 0, 1);
     const recipient = emailRecipient.member_email;
 
@@ -89,7 +91,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 1);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const timestamp = new Date(2000, 0, 1);
     const recipient = emailRecipient.member_email;
 
@@ -135,7 +137,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 2);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const timestamp = new Date(2000, 0, 1);
     const recipient = emailRecipient.member_email;
 
@@ -181,7 +183,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 3);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const timestamp = new Date(2000, 0, 1);
     const recipient = emailRecipient.member_email;
 
@@ -228,7 +230,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 4);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const timestamp = new Date(2000, 0, 1);
 
     const {
@@ -283,7 +285,7 @@ describe('MailgunEmailSuppressionList', function () {
     const emailRecipient = fixtureManager.get('email_recipients', 5);
     assert(emailRecipient.batch_id === emailBatch.id);
     const memberId = emailRecipient.member_id;
-    const providerId = emailBatch.mailgun_message_id;
+    const providerId = emailBatch.provider_message_id;
     const recipient = emailRecipient.member_email;
     const timestamp = new Date(2000, 0, 1);
 

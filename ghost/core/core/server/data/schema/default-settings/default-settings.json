@@ -476,15 +476,19 @@
     }
   },
   "email": {
-    "mailgun_domain": {
+    "cloudflare_account_id": {
       "defaultValue": null,
       "type": "string"
     },
-    "mailgun_api_key": {
+    "cloudflare_api_token": {
       "defaultValue": null,
       "type": "string"
     },
-    "mailgun_base_url": {
+    "cloudflare_zone_id": {
+      "defaultValue": null,
+      "type": "string"
+    },
+    "cloudflare_sending_domain": {
       "defaultValue": null,
       "type": "string"
     },

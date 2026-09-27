@@ -452,7 +452,7 @@ describe('Unit: utils/serializers/output/mappers', function () {
 
       const model = createJsonModel({
         id: 'id1',
-        mailgun_message_id: 'provider_id1',
+        provider_message_id: 'provider_id1',
         status: 'status1',
         member_segment: 'member_segment1',
         created_at: 'created_at1',
@@ -470,7 +470,7 @@ describe('Unit: utils/serializers/output/mappers', function () {
       const mapped = mappers.emailBatches(model, frame);
       assert.deepEqual(mapped, {
         id: 'id1',
-        mailgun_message_id: 'provider_id1',
+        provider_message_id: 'provider_id1',
         status: 'status1',
         member_segment: 'member_segment1',
         created_at: 'created_at1',

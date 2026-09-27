@@ -1661,7 +1661,7 @@ module.exports = {
   email_batches: {
     id: { type: 'string', maxlength: 24, nullable: false, primary: true },
     email_id: { type: 'string', maxlength: 24, nullable: false, references: 'emails.id' },
-    mailgun_message_id: { type: 'string', maxlength: 255, nullable: true },
+    provider_message_id: { type: 'string', maxlength: 255, nullable: true },
     fallback_sending_domain: { type: 'boolean', nullable: false, defaultTo: false },
     status: {
       type: 'string',
@@ -2464,7 +2464,7 @@ module.exports = {
     member_uuid: { type: 'string', maxlength: 36, nullable: false },
     member_email: { type: 'string', maxlength: 191, nullable: false },
     member_name: { type: 'string', maxlength: 191, nullable: true },
-    mailgun_message_id: { type: 'string', maxlength: 1000, nullable: true },
+    provider_message_id: { type: 'string', maxlength: 1000, nullable: true },
     delivered_at: { type: 'dateTime', nullable: true },
     opened_at: { type: 'dateTime', nullable: true },
     clicked_at: { type: 'dateTime', nullable: true },
@@ -2473,7 +2473,7 @@ module.exports = {
     created_at: { type: 'dateTime', nullable: false },
     updated_at: { type: 'dateTime', nullable: true },
     '@@INDEXES@@': [
-      // `mailgun_message_id` is too long for a MySQL index, so we use a
+      // `provider_message_id` is too long for a MySQL index, so we use a
       // prefix.
       //
       // We choose 31 because Mailgun message IDs look like this:
@@ -2487,7 +2487,7 @@ module.exports = {
       //
       // Note that this prefix index only happens for MySQL. SQLite
       // indexes the full value.
-      { columns: ['mailgun_message_id'], length: 31 },
+      { columns: ['provider_message_id'], length: 31 },
     ],
   },
   gifts: {

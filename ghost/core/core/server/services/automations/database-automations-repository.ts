@@ -306,7 +306,7 @@ export function createDatabaseAutomationsRepository({
           member_name: options.memberName,
           automation_action_revision_id: options.automationActionRevisionId,
           automation_run_step_id: options.automationRunStepId,
-          ...(options.mailgunMessageId ? { mailgun_message_id: options.mailgunMessageId } : {}),
+          ...(options.mailgunMessageId ? { provider_message_id: options.mailgunMessageId } : {}),
           track_clicks: options.trackClicks,
           track_opens: options.trackOpens,
           created_at: now,
@@ -320,9 +320,9 @@ export function createDatabaseAutomationsRepository({
         return [];
       }
       return await knex('automated_email_recipients')
-        .select('id', 'mailgun_message_id', 'automation_action_revision_id')
+        .select('id', 'provider_message_id', 'automation_action_revision_id')
         .whereNotNull('automation_action_revision_id')
-        .whereIn('mailgun_message_id', mailgunMessageIds);
+        .whereIn('provider_message_id', mailgunMessageIds);
     },
 
     async trackEmailDeliveredAndOpened(eventsByAutomatedEmailRecipientId) {

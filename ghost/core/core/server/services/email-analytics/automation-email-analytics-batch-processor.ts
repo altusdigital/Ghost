@@ -39,7 +39,7 @@ const getAutomatedEmailRecipientsByMessageId = (
 ): Map<string, AutomatedEmailRecipientWithMailgunId> => {
   const result = new Map<string, AutomatedEmailRecipientWithMailgunId>();
   for (const automatedEmailRecipient of automatedEmailRecipients) {
-    result.set(automatedEmailRecipient.mailgun_message_id, automatedEmailRecipient);
+    result.set(automatedEmailRecipient.provider_message_id, automatedEmailRecipient);
   }
   return result;
 };

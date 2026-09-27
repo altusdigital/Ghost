@@ -89,7 +89,7 @@ async function waitForScheduledSaveResponse(page: Page, resource: 'posts' | 'pag
 }
 
 test.describe('Ghost Admin - Publishing', () => {
-  test.use({ mailgunEnabled: true });
+  test.use({ cloudflareEnabled: true });
 
   test('publish only - post is visible on frontend', async ({ page }) => {
     const postData = { title: 'Publish post only', body: 'This is my post body.' };

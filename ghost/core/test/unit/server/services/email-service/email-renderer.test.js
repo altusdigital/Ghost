@@ -1815,10 +1815,10 @@ describe('Email renderer', function () {
           {},
         );
         const member = { name, email: 'reader@example.com', uuid: 'member-uuid', status: 'free' };
-        const MailgunEmailProvider = require('../../../../../core/server/services/email-service/mailgun-email-provider');
-        const send = sinon.stub().resolves({ id: 'test-message' });
-        const provider = new MailgunEmailProvider({
-          mailgunClient: { send },
+        const CloudflareEmailProvider = require('../../../../../core/server/services/email-service/cloudflare-email-provider');
+        const send = sinon.stub().resolves({ id: '<test-message@example.com>' });
+        const provider = new CloudflareEmailProvider({
+          client: { send },
           config: { get: () => undefined },
         });
         await provider.send(
@@ -1839,11 +1839,9 @@ describe('Email renderer', function () {
           },
           {},
         );
-        const [message, recipients] = send.firstCall.args;
-        const personalize = (body) =>
-          body.replace(/%recipient\.(\w+)%/g, (match, id) => recipients[member.email][id]);
-        const html = personalize(message.html);
-        const plaintext = personalize(message.plaintext);
+        const [message] = send.firstCall.args;
+        const html = message.html;
+        const plaintext = message.plaintext;
         const EmailService = require('../../../../../core/server/services/email-service/email-service');
         const previewHtml = EmailService.prototype.replaceDefinitions(
           response.html,

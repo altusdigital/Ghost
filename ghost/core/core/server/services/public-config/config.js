@@ -9,6 +9,21 @@ const tinybirdStatsPayloadProperties = ['endpoint', 'endpointBrowser', 'version'
 
 const tinybirdLocalStatsPayloadProperties = ['enabled', 'endpoint', 'datasource'];
 
+const isCloudflareEmailConfigured = (ghostConfig, ghostSettings) => {
+  const fromConfig = ghostConfig.get('bulkEmail') && ghostConfig.get('bulkEmail').cloudflare;
+  const token = fromConfig?.apiToken || ghostSettings.get('cloudflare_api_token');
+  const accountId = fromConfig?.accountId || ghostSettings.get('cloudflare_account_id');
+  const domain = fromConfig?.domain || ghostSettings.get('cloudflare_sending_domain');
+  return (
+    typeof token === 'string' &&
+    token.length > 0 &&
+    typeof accountId === 'string' &&
+    accountId.length > 0 &&
+    typeof domain === 'string' &&
+    domain.includes('.')
+  );
+};
+
 const sanitizeHostSettings = (hostSettings) => {
   if (!isPlainObject(hostSettings)) {
     return hostSettings;
@@ -59,7 +74,7 @@ module.exports = function getConfigProperties() {
     clientExtensions: config.get('clientExtensions') || {},
     enableDeveloperExperiments: config.get('enableDeveloperExperiments') || false,
     stripeDirect: config.get('stripeDirect'),
-    mailgunIsConfigured: !!(config.get('bulkEmail') && config.get('bulkEmail').mailgun),
+    mailgunIsConfigured: isCloudflareEmailConfigured(config, settingsCache),
     emailAnalytics: config.get('emailAnalytics:enabled'),
     hostSettings: sanitizeHostSettings(config.get('hostSettings')),
     klipy: config.get('klipy'),

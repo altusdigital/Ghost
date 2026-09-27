@@ -2,7 +2,7 @@ const sinon = require('sinon');
 const { agentProvider, fixtureManager, configUtils } = require('../../../utils/e2e-framework');
 const assert = require('node:assert/strict');
 const logging = require('@tryghost/logging');
-const MailgunClient = require('../../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../../core/server/services/lib/cloudflare-email-client');
 const DomainEvents = require('@tryghost/domain-events');
 const emailAnalytics = require('../../../../core/server/services/email-analytics');
 
@@ -50,7 +50,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       membersService = require('../../../../core/server/services/members');
 
       sinon
-        .stub(MailgunClient.prototype, 'fetchEvents')
+        .stub(CloudflareEmailClient.prototype, 'fetchEvents')
         .callsFake(async function (_, batchHandler) {
           const normalizedEvents = (events.map(this.normalizeEvent) || []).filter((e) => !!e);
           return [await batchHandler(normalizedEvents)];
@@ -68,7 +68,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
 
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -123,7 +123,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
 
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       // Reset
@@ -185,7 +185,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
 
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -241,7 +241,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -351,7 +351,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 4);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -456,7 +456,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
 
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2001, 0, 1);
 
       events = [
@@ -567,7 +567,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 1);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -673,7 +673,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       // Reset
@@ -805,7 +805,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2001, 0, 1);
 
       events = [
@@ -912,7 +912,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2001, 0, 2);
 
       events = [
@@ -1019,7 +1019,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2001, 0, 3);
 
       events = [
@@ -1126,7 +1126,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailRecipient = fixtureManager.get('email_recipients', 1);
       assert(emailRecipient.batch_id === emailBatch.id);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
       const eventsURI =
         '/members/events/?' +
@@ -1195,7 +1195,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       assert(emailRecipient.batch_id === emailBatch.id);
 
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       // Initialise member with 2 newsletters
@@ -1282,7 +1282,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       const emailBatch = fixtureManager.get('email_batches', 0);
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       const memberId = emailRecipient.member_id;
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       // Member subscribed to 2 newsletters
@@ -1349,7 +1349,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
 
       const emailRecipient = fixtureManager.get('email_recipients', 0);
       assert(emailRecipient.batch_id === emailBatch.id);
-      const providerId = emailBatch.mailgun_message_id;
+      const providerId = emailBatch.provider_message_id;
       const timestamp = new Date(2000, 0, 1);
 
       events = [
@@ -1395,7 +1395,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       assert.equal(result, 0);
 
       sinon.assert.called(errorLog);
-      sinon.assert.calledWith(errorLog, 'Received invalid event from Mailgun');
+      sinon.assert.calledWith(errorLog, 'Received invalid event from Cloudflare Email');
     });
   });
 });

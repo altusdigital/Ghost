@@ -41,9 +41,9 @@ const MAILGUN_ON = {
     browseSettings: {
       response: settingsResponse({
         settings: {
-          mailgun_domain: 'mail.test.com',
-          mailgun_api_key: 'key',
-          mailgun_base_url: 'https://api.mailgun.net/v3',
+          cloudflare_account_id: 'account',
+          cloudflare_api_token: 'token',
+          cloudflare_sending_domain: 'mail.test.com',
         },
       }),
     },

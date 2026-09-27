@@ -147,7 +147,7 @@ e2e/
 │   │   ├── base-page.ts        # Base class for all page objects
 │   │   └── admin/              # e.g. login-page.ts, admin-page.ts
 │   ├── environment/            # Ghost container/database lifecycle
-│   ├── services/               # Test doubles (fake Stripe, Mailgun, etc.)
+│   ├── services/               # Test doubles (fake Stripe, Cloudflare Email, etc.)
 │   └── utils/                  # Shared utilities
 ├── data-factory/               # Test data factories (see its own README)
 ├── visual-regression/          # Screenshot baseline suite (separate config)

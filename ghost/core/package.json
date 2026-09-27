@@ -1,6 +1,6 @@
 {
   "name": "ghost",
-  "version": "6.65.1-rc.0",
+  "version": "6.66.0-rc.0",
   "description": "The professional publishing platform",
   "keywords": [
     "blog",
@@ -205,7 +205,6 @@
     "leaky-bucket": "2.2.0",
     "lodash": "catalog:",
     "luxon": "3.7.2",
-    "mailgun.js": "10.4.0",
     "metascraper": "5.55.2",
     "metascraper-amazon": "5.55.2",
     "metascraper-author": "5.55.2",

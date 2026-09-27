@@ -1,17 +1,7 @@
 import React from 'react';
 import TopLevelGroup from '@/settings/components/top-level-group';
 import useSettingGroup from '@/settings/hooks/use-setting-group';
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tryghost/shade/components';
+import { Field, FieldDescription, FieldLabel, Input } from '@tryghost/shade/components';
 import { Inline } from '@tryghost/shade/primitives';
 import { LucideIcon } from '@tryghost/shade/utils';
 import {
@@ -20,16 +10,10 @@ import {
   SettingGroupValueContent,
   SettingGroupValueTitle,
 } from '@tryghost/shade/patterns';
-import { getSettingValues, useEditSettings } from '@tryghost/admin-x-framework/api/settings';
-import { useHandleError } from '@tryghost/admin-x-framework/hooks';
+import { getSettingValues } from '@tryghost/admin-x-framework/api/settings';
 import { withErrorBoundary } from '@/settings/components/with-error-boundary';
 
-const MAILGUN_REGIONS = [
-  { label: '🇺🇸 US', value: 'https://api.mailgun.net/v3' },
-  { label: '🇪🇺 EU', value: 'https://api.eu.mailgun.net/v3' },
-];
-
-const MailGun: React.FC<{ keywords: string[] }> = ({ keywords }) => {
+const CloudflareEmail: React.FC<{ keywords: string[] }> = ({ keywords }) => {
   const {
     localSettings,
     isEditing,
@@ -39,107 +23,96 @@ const MailGun: React.FC<{ keywords: string[] }> = ({ keywords }) => {
     updateSetting,
     handleEditingChange,
   } = useSettingGroup();
-  const { mutateAsync: editSettings } = useEditSettings();
-  const handleError = useHandleError();
 
-  const [mailgunRegion, mailgunDomain, mailgunApiKey] = getSettingValues(localSettings, [
-    'mailgun_base_url',
-    'mailgun_domain',
-    'mailgun_api_key',
+  const [accountId, apiToken, zoneId, sendingDomain] = getSettingValues(localSettings, [
+    'cloudflare_account_id',
+    'cloudflare_api_token',
+    'cloudflare_zone_id',
+    'cloudflare_sending_domain',
   ]) as string[];
 
-  const isMailgunSetup = mailgunDomain && mailgunApiKey;
+  const isConfigured = Boolean(accountId && apiToken && sendingDomain);
 
   const values = (
     <SettingGroupContent>
       <SettingGroupValue>
-        {!isMailgunSetup && <SettingGroupValueTitle>Status</SettingGroupValueTitle>}
-        <SettingGroupValueContent className={!isMailgunSetup ? 'mt-1' : undefined}>
-          {isMailgunSetup ? (
+        {!isConfigured && <SettingGroupValueTitle>Status</SettingGroupValueTitle>}
+        <SettingGroupValueContent className={!isConfigured ? 'mt-1' : undefined}>
+          {isConfigured ? (
             <Inline align="center" gap="sm">
               <LucideIcon.Check className="size-4 text-state-success" />
-              Mailgun is set up
+              Cloudflare Email is set up
             </Inline>
           ) : (
-            'Mailgun is not set up'
+            'Cloudflare Email is not set up'
           )}
         </SettingGroupValueContent>
       </SettingGroupValue>
     </SettingGroupContent>
   );
 
-  const apiKeysHint = (
-    <>
-      Find your Mailgun API keys{' '}
-      <a
-        className="text-green hover:text-green-400"
-        href="https://app.mailgun.com/settings/api_security"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        here
-      </a>
-    </>
-  );
   const inputs = (
     <SettingGroupContent>
-      <div className="grid grid-cols-[120px_auto] gap-x-3 gap-y-6">
+      <div className="grid gap-6">
         <Field>
-          <FieldLabel>Mailgun region</FieldLabel>
-          <Select
-            value={mailgunRegion ?? ''}
-            onValueChange={(value) => updateSetting('mailgun_base_url', value)}
-          >
-            <SelectTrigger aria-label="Mailgun region">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MAILGUN_REGIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="mailgun-domain">Mailgun domain</FieldLabel>
+          <FieldLabel htmlFor="cloudflare-account-id">Account ID</FieldLabel>
           <Input
-            id="mailgun-domain"
-            value={mailgunDomain ?? ''}
-            onChange={(e) => {
-              updateSetting('mailgun_domain', e.target.value);
+            id="cloudflare-account-id"
+            value={accountId ?? ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              updateSetting('cloudflare_account_id', event.target.value);
             }}
           />
         </Field>
-        <div className="col-span-2">
-          <Field>
-            <FieldLabel htmlFor="mailgun-api-key">Mailgun private API key</FieldLabel>
-            <Input
-              id="mailgun-api-key"
-              type="password"
-              value={mailgunApiKey ?? ''}
-              onChange={(e) => {
-                updateSetting('mailgun_api_key', e.target.value);
-              }}
-            />
-            <FieldDescription>{apiKeysHint}</FieldDescription>
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel htmlFor="cloudflare-zone-id">Zone ID</FieldLabel>
+          <Input
+            id="cloudflare-zone-id"
+            value={zoneId ?? ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              updateSetting('cloudflare_zone_id', event.target.value);
+            }}
+          />
+          <FieldDescription>Used to poll delivery, bounce, and complaint events.</FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="cloudflare-sending-domain">Sending domain</FieldLabel>
+          <Input
+            id="cloudflare-sending-domain"
+            value={sendingDomain ?? ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              updateSetting('cloudflare_sending_domain', event.target.value);
+            }}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="cloudflare-api-token">API token</FieldLabel>
+          <Input
+            id="cloudflare-api-token"
+            type="password"
+            value={apiToken ?? ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              updateSetting('cloudflare_api_token', event.target.value);
+            }}
+          />
+          <FieldDescription>
+            Token with Email Sending Edit. Find tokens in the Cloudflare dashboard.
+          </FieldDescription>
+        </Field>
       </div>
     </SettingGroupContent>
   );
 
   const groupDescription = (
     <>
-      The Mailgun API is used for bulk email newsletter delivery.{' '}
+      Cloudflare Email Service sends newsletters, automations, and system email.{' '}
       <a
         className="text-green hover:text-green-400"
-        href="https://docs.ghost.org/faq/mailgun-newsletters/"
+        href="https://developers.cloudflare.com/email-service/"
         rel="noopener noreferrer"
         target="_blank"
       >
-        Why is this required?
+        Email Service docs
       </a>
     </>
   );
@@ -152,22 +125,10 @@ const MailGun: React.FC<{ keywords: string[] }> = ({ keywords }) => {
       navid="mailgun"
       saveState={saveState}
       testId="mailgun"
-      title="Mailgun"
+      title="Cloudflare Email"
       onCancel={handleCancel}
       onEditingChange={handleEditingChange}
-      onSave={async () => {
-        // this is a special case where we need to set the region to the default if it's not set,
-        // since when the Mailgun Region is not changed, the value doesn't get set in the updateSetting
-        // resulting in the mailgun base url remaining null
-        // this should not fire if the user has changed the region or if the region is already set
-        if (!mailgunRegion) {
-          try {
-            await editSettings([{ key: 'mailgun_base_url', value: MAILGUN_REGIONS[0].value }]);
-          } catch (e) {
-            handleError(e);
-            return;
-          }
-        }
+      onSave={() => {
         void handleSave();
       }}
     >
@@ -176,4 +137,4 @@ const MailGun: React.FC<{ keywords: string[] }> = ({ keywords }) => {
   );
 };
 
-export default withErrorBoundary(MailGun, 'Mailgun');
+export default withErrorBoundary(CloudflareEmail, 'Cloudflare Email');

@@ -10,7 +10,7 @@ async function getNewsletters(request: APIRequestContext): Promise<{ id: string 
 }
 
 test.describe('Ghost Admin - Newsletter Send', () => {
-  test.use({ mailgunEnabled: true });
+  test.use({ cloudflareEnabled: true });
 
   test('publish and send newsletter - email is delivered to member', async ({
     page,

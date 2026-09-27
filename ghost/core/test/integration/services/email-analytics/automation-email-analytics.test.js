@@ -5,7 +5,7 @@ const { default: ObjectId } = require('bson-objectid');
 const sinon = require('sinon');
 const { agentProvider } = require('../../../utils/e2e-framework');
 const testUtils = require('../../../utils');
-const MailgunClient = require('../../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../../core/server/services/lib/cloudflare-email-client');
 const {
   AUTOMATION_EMAIL_TAG,
   DEFAULT_EMAIL_DESIGN_SETTING_SLUG,
@@ -48,15 +48,10 @@ describe('Automation email analytics', function () {
     emailDesignSettingId = emailDesignSetting.id;
 
     sinon
-      .stub(MailgunClient.prototype, 'fetchEvents')
+      .stub(CloudflareEmailClient.prototype, 'fetchEvents')
       .callsFake(async function (mailgunOptions, batchHandler) {
-        const wantedTags = mailgunOptions.tags ? mailgunOptions.tags.split(' AND ') : [];
-        const wantedEventTypes = mailgunOptions.event.split(' OR ');
         const matching = mailgunEvents.filter((event) => {
-          const tags = event.tags ?? [];
           return (
-            wantedTags.every((tag) => tags.includes(tag)) &&
-            wantedEventTypes.includes(event.event) &&
             (mailgunOptions.begin === undefined || event.timestamp >= mailgunOptions.begin) &&
             (mailgunOptions.end === undefined || event.timestamp <= mailgunOptions.end)
           );
@@ -193,7 +188,7 @@ describe('Automation email analytics', function () {
     });
     return await testUtils
       .knex('automated_email_recipients')
-      .where('mailgun_message_id', mailgunMessageId)
+      .where('provider_message_id', mailgunMessageId)
       .first();
   }
 
@@ -421,7 +416,7 @@ describe('Automation email analytics', function () {
     assert.equal(updatedSecond.delivered_at, null, 'an unrelated recipient should be untouched');
   });
 
-  it('ignores events that are not tagged as automation emails', async function () {
+  it('records a delivered event matched by provider id without an automation tag', async function () {
     const revision = await createSendEmailRevision();
     const messageId = 'newsletter-message-id@mg.example.com';
     const recipient = await recordEmailSent({ revision, mailgunMessageId: messageId });
@@ -436,9 +431,9 @@ describe('Automation email analytics', function () {
     ];
 
     const eventCount = await emailAnalytics.getAutomations().fetchLatestNonOpenedEvents();
-    assert.equal(eventCount, 0);
+    assert.equal(eventCount, 1);
 
     const updated = await readRecipient(recipient.id);
-    assert.equal(updated.delivered_at, null);
+    assertDateEqual(updated.delivered_at, EVENT_DATE, 'provider id match does not depend on tags');
   });
 });

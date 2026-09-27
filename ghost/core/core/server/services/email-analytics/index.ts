@@ -144,6 +144,7 @@ export const init = ({
     },
     metrics,
     settingsCache,
+    knex: db.knex,
     createEventProcessor: () =>
       new NewsletterEmailAnalyticsBatchProcessor({
         config,
@@ -174,6 +175,7 @@ export const init = ({
     },
     metrics,
     settingsCache,
+    knex: db.knex,
     createEventProcessor: () =>
       new AutomationEmailAnalyticsBatchProcessor({
         automationsApi,
@@ -201,6 +203,7 @@ export const init = ({
     },
     metrics,
     settingsCache,
+    knex: db.knex,
     createEventProcessor: () => new GiftEmailAnalyticsBatchProcessor({ giftDeliveryService }),
   });
 

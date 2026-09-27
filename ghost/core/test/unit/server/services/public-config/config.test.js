@@ -79,9 +79,13 @@ describe('Public-config Service', function () {
       assert.equal(configProperties.klipy.apiKey, 'KLIPY_KEY');
     });
 
-    it('should return true for mailgunIsConfigured when mailgun is configured', function () {
+    it('should return true for mailgunIsConfigured when Cloudflare Email is configured', function () {
       configUtils.set('bulkEmail', {
-        mailgun: 'exists',
+        cloudflare: {
+          apiToken: 'token',
+          accountId: 'account',
+          domain: 'email.example.com',
+        },
       });
 
       const configProperties = getConfigProperties();

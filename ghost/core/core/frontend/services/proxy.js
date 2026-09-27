@@ -94,6 +94,17 @@ module.exports = {
     return require('../../server/services/members');
   },
 
+  // Newsletter open pixel. Lazy so the frontend router does not import the database.
+  async recordEmailOpen(emailId, memberEmail) {
+    const db = require('../../server/data/db');
+    await db
+      .knex('email_recipients')
+      .where('email_id', emailId)
+      .where('member_email', memberEmail)
+      .whereNull('opened_at')
+      .update({ opened_at: db.knex.fn.now() });
+  },
+
   // TODO: Expose less of the API to make this safe
   api: require('../../server/api').endpoints,
 

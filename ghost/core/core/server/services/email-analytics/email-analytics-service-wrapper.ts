@@ -37,6 +37,7 @@ export class EmailAnalyticsServiceWrapper {
     createEventProcessor,
     metrics,
     settingsCache,
+    knex,
   }: Readonly<{
     config: Pick<ConfigInstance, 'get'>;
     logName: string;
@@ -48,6 +49,7 @@ export class EmailAnalyticsServiceWrapper {
     createEventProcessor: () => BatchEventProcessor;
     metrics: Pick<GhostMetrics, 'metric'>;
     settingsCache: { get: (key: string) => unknown };
+    knex?: import('knex').Knex;
   }>) {
     this.#logName = logName;
     this.#jobType = jobType;
@@ -59,7 +61,13 @@ export class EmailAnalyticsServiceWrapper {
 
     this.#service = new EmailAnalyticsService({
       fetchEvents: (options) =>
-        fetchMailgunEvents({ ...options, config, settings: settingsCache, tags: mailgunTags }),
+        fetchMailgunEvents({
+          ...options,
+          config,
+          settings: settingsCache,
+          tags: mailgunTags,
+          knex,
+        }),
       queries,
       jobNames,
       cursorSeed,

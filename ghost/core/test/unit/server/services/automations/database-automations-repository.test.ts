@@ -183,7 +183,7 @@ const createDatabase = async (): Promise<Knex> => {
     table.text('member_uuid');
     table.text('member_email');
     table.text('member_name');
-    table.text('mailgun_message_id');
+    table.text('provider_message_id');
     table.datetime('delivered_at');
     table.datetime('opened_at');
     table.datetime('clicked_at');
@@ -2373,7 +2373,7 @@ describe('automations repository', function () {
         member_uuid: '00000000-0000-4000-8000-000000000001',
         member_email: 'member@example.com',
         member_name: 'Test Member',
-        mailgun_message_id: 'mailgun-message-id',
+        provider_message_id: 'mailgun-message-id',
         delivered_at: null,
         opened_at: null,
         clicked_at: null,
@@ -2446,7 +2446,7 @@ describe('automations repository', function () {
       });
 
       const recipient = await knex('automated_email_recipients').first();
-      assert.equal(recipient.mailgun_message_id, null);
+      assert.equal(recipient.provider_message_id, null);
       assert.equal(recipient.member_name, null);
       assert.equal(recipient.track_clicks, 0);
       assert.equal(recipient.track_opens, 0);
@@ -2471,22 +2471,22 @@ describe('automations repository', function () {
         {
           id: 'matching-recipient-1',
           automation_action_revision_id: firstRevision.id,
-          mailgun_message_id: 'matching-message-1',
+          provider_message_id: 'matching-message-1',
         },
         {
           id: 'matching-recipient-2',
           automation_action_revision_id: secondRevision.id,
-          mailgun_message_id: 'matching-message-2',
+          provider_message_id: 'matching-message-2',
         },
         {
           id: 'non-automated-recipient',
           automation_action_revision_id: null,
-          mailgun_message_id: 'other-message-3',
+          provider_message_id: 'other-message-3',
         },
         {
           id: 'unmatched-recipient',
           automation_action_revision_id: firstRevision.id,
-          mailgun_message_id: 'unmatched-message',
+          provider_message_id: 'unmatched-message',
         },
       ]);
 
@@ -2502,12 +2502,12 @@ describe('automations repository', function () {
           {
             id: 'matching-recipient-1',
             automation_action_revision_id: firstRevision.id,
-            mailgun_message_id: 'matching-message-1',
+            provider_message_id: 'matching-message-1',
           },
           {
             id: 'matching-recipient-2',
             automation_action_revision_id: secondRevision.id,
-            mailgun_message_id: 'matching-message-2',
+            provider_message_id: 'matching-message-2',
           },
         ],
       );
@@ -2801,22 +2801,22 @@ describe('automations repository', function () {
         {
           id: 'recipient-1',
           automation_action_revision_id: firstRevisionId,
-          mailgun_message_id: 'mid1',
+          provider_message_id: 'mid1',
         },
         {
           id: 'recipient-2',
           automation_action_revision_id: secondRevisionId,
-          mailgun_message_id: 'mid2',
+          provider_message_id: 'mid2',
         },
         {
           id: 'recipient-3',
           automation_action_revision_id: firstRevisionId,
-          mailgun_message_id: 'mid3',
+          provider_message_id: 'mid3',
         },
         {
           id: 'recipient-4',
           automation_action_revision_id: firstRevisionId,
-          mailgun_message_id: 'mid4',
+          provider_message_id: 'mid4',
         },
       ]);
     });

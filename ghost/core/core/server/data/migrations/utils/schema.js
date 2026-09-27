@@ -245,9 +245,16 @@ function createRenameColumnMigration(table, from, to, options = {}) {
         logging.warn(
           `Renaming ${table}.${from} to ${table}.${to} column - skipping as column ${table}.${to} already exists`,
         );
-      } else {
-        await commands.renameColumn(table, from, to, knex, options);
+        return;
       }
+      const hasSource = await knex.schema.hasColumn(table, from);
+      if (!hasSource) {
+        logging.warn(
+          `Renaming ${table}.${from} to ${table}.${to} column - skipping as column ${table}.${from} does not exist`,
+        );
+        return;
+      }
+      await commands.renameColumn(table, from, to, knex, options);
     },
     async function down(knex) {
       const hasColumn = await knex.schema.hasColumn(table, from);
@@ -255,9 +262,16 @@ function createRenameColumnMigration(table, from, to, options = {}) {
         logging.warn(
           `Renaming ${table}.${to} to ${table}.${from} column - skipping as column ${table}.${from} already exists`,
         );
-      } else {
-        await commands.renameColumn(table, to, from, knex, options);
+        return;
       }
+      const hasSource = await knex.schema.hasColumn(table, to);
+      if (!hasSource) {
+        logging.warn(
+          `Renaming ${table}.${to} to ${table}.${from} column - skipping as column ${table}.${to} does not exist`,
+        );
+        return;
+      }
+      await commands.renameColumn(table, to, from, knex, options);
     },
   );
 }

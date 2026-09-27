@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, type ChangeEvent } from 'react';
 import validator from 'validator';
 import {
   Button,
@@ -47,13 +47,13 @@ export function SendTestEmail({
   const [editedAddress, setEditedAddress] = useState<string | null>(null);
 
   const address = editedAddress ?? currentUser?.email ?? '';
-  const [mailgunApiKey, mailgunDomain, mailgunBaseUrl] = getSettingValues<string>(
+  const [cloudflareToken, cloudflareAccountId, cloudflareDomain] = getSettingValues<string>(
     settingsData?.settings ?? [],
-    ['mailgun_api_key', 'mailgun_domain', 'mailgun_base_url'],
+    ['cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_sending_domain'],
   );
   const mailgunIsConfigured =
     Boolean(configData?.config.mailgunIsConfigured) ||
-    Boolean(mailgunApiKey && mailgunDomain && mailgunBaseUrl);
+    Boolean(cloudflareToken && cloudflareAccountId && cloudflareDomain);
 
   const send = async () => {
     const recipient = address.trim();
@@ -109,7 +109,9 @@ export function SendTestEmail({
               placeholder="you@yoursite.com"
               type="email"
               value={address}
-              onChange={(event) => setEditedAddress(event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                setEditedAddress(event.target.value);
+              }}
             />
             <p className="text-sm text-muted-foreground">
               You&rsquo;ll receive this as a {audienceLabel}.

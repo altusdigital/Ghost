@@ -1,0 +1,10 @@
+services:
+  ghost-dev:
+    environment:
+      # Route Ghost transactional and newsletter email through Cloudflare Email Service.
+      # Values come from the host environment/.env file.
+      mail__from: ${CLOUDFLARE_FROM:-welcome@${CLOUDFLARE_SENDING_DOMAIN}}
+      bulkEmail__cloudflare__accountId: ${CLOUDFLARE_ACCOUNT_ID}
+      bulkEmail__cloudflare__apiToken: ${CLOUDFLARE_API_TOKEN}
+      bulkEmail__cloudflare__zoneId: ${CLOUDFLARE_ZONE_ID}
+      bulkEmail__cloudflare__domain: ${CLOUDFLARE_SENDING_DOMAIN}
