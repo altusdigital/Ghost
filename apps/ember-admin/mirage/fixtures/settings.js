@@ -83,9 +83,10 @@ export default [
     setting('portal', 'portal_signup_checkbox_required', false),
 
     // EMAIL
-    setting('email', 'mailgun_domain', null),
-    setting('email', 'mailgun_api_key', null),
-    setting('email', 'mailgun_base_url', null),
+    setting('email', 'cloudflare_account_id', null),
+    setting('email', 'cloudflare_api_token', null),
+    setting('email', 'cloudflare_zone_id', null),
+    setting('email', 'cloudflare_sending_domain', null),
     setting('email', 'email_track_opens', true),
     setting('email', 'email_track_clicks', true),
     setting('email', 'email_verification_required', false),

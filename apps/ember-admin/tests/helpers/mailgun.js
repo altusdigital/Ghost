@@ -1,17 +1,27 @@
-export function enableMailgun(server, enabled = true) {
-    server.db.settings.findBy({key: 'mailgun_api_key'})
-        ? server.db.settings.update({key: 'mailgun_api_key'}, {value: (enabled ? 'MAILGUN_API_KEY' : null)})
-        : server.create('setting', {key: 'mailgun_api_key', value: (enabled ? 'MAILGUN_API_KEY' : null), group: 'email'});
+export function toggleMailgun(server, enabled) {
+    const values = enabled
+        ? {
+            cloudflare_account_id: 'CLOUDFLARE_ACCOUNT',
+            cloudflare_api_token: 'CLOUDFLARE_API_TOKEN',
+            cloudflare_sending_domain: 'email.example.com'
+        }
+        : {
+            cloudflare_account_id: null,
+            cloudflare_api_token: null,
+            cloudflare_sending_domain: null
+        };
 
-    server.db.settings.findBy({key: 'mailgun_domain'})
-        ? server.db.settings.update({key: 'mailgun_domain'}, {value: (enabled ? 'MAILGUN_DOMAIN' : null)})
-        : server.create('setting', {key: 'mailgun_domain', value: (enabled ? 'MAILGUN_DOMAIN' : null), group: 'email'});
+    for (const [key, value] of Object.entries(values)) {
+        server.db.settings.findBy({key})
+            ? server.db.settings.update({key}, {value})
+            : server.create('setting', {key, value, group: 'email'});
+    }
+}
 
-    server.db.settings.findBy({key: 'mailgun_base_url'})
-        ? server.db.settings.update({key: 'mailgun_base_url'}, {value: (enabled ? 'MAILGUN_BASE_URL' : null)})
-        : server.create('setting', {key: 'mailgun_base_url', value: (enabled ? 'MAILGUN_BASE_URL' : null), group: 'email'});
+export function enableMailgun(server) {
+    toggleMailgun(server, true);
 }
 
 export function disableMailgun(server) {
-    enableMailgun(server, false);
+    toggleMailgun(server, false);
 }

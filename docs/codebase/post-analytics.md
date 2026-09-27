@@ -31,17 +31,18 @@ setting.
 
 ## Email analytics
 
-Ghost uses Mailgun's Events API to collect newsletter delivery, open, and
-failure data. Aggregates are stored on `emails`, with recipient-level data in
+Ghost polls Cloudflare's `emailSendingAdaptive` dataset for newsletter delivery,
+bounce, failure, and complaint data. Opens are recorded by Ghost's tracking
+pixel. Aggregates are stored on `emails`, with recipient-level data in
 `email_recipients`.
 
 “Sent” and “delivered” are different. Sent means Ghost processed the email
-batch. Delivered means Ghost received a delivery event from Mailgun.
+batch. Delivered means Ghost received a delivery event from Cloudflare.
 
-The email analytics job polls Mailgun regularly. It fetches recent events first,
-then uses a delayed missing-events pass because Mailgun events do not always
-arrive in order. Progress is stored so the job can continue from its previous
-position.
+The email analytics job polls Cloudflare regularly. It fetches recent events
+first, then uses a delayed missing-events pass because provider events do not
+always arrive in order. Progress is stored so the job can continue from its
+previous position.
 
 Email analytics can be disabled with `emailAnalytics.enabled`. The service and
 its scheduled jobs live in

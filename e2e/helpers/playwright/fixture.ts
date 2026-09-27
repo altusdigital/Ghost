@@ -16,7 +16,7 @@ import {
   EGRESS_MONITOR_ENABLED,
 } from '@/helpers/environment/constants';
 import { EmailClient, MailPit } from '@/helpers/services/email/mail-pit';
-import { FakeMailgunServer, MailgunTestService } from '@/helpers/services/mailgun';
+import { FakeCloudflareEmailServer } from '@/helpers/services/cloudflare';
 import { FakeStripeServer, StripeTestService, WebhookClient } from '@/helpers/services/stripe';
 import { GhostInstance, getEnvironmentManager, isAllowedHost } from '@/helpers/environment';
 import { SettingsService } from '@/helpers/services/settings/settings-service';
@@ -112,9 +112,8 @@ export interface GhostInstanceFixture {
   stripeEnabled?: boolean;
   stripeServer?: FakeStripeServer;
   stripe?: StripeTestService;
-  mailgunEnabled?: boolean;
-  mailgunServer?: FakeMailgunServer;
-  mailgun?: MailgunTestService;
+  cloudflareEnabled?: boolean;
+  cloudflareServer?: FakeCloudflareEmailServer;
   emailClient: EmailClient;
   ghostAccountOwner: User;
   ghostAccountAuthor: StaffAccount;
@@ -340,7 +339,7 @@ export const test = base.extend<GhostInstanceFixture & InternalFixtures, WorkerF
   ],
 
   _testEnvironmentContext: async (
-    { config, isolation, labs, stripeEnabled, stripeServer, mailgunEnabled, mailgunServer },
+    { config, isolation, labs, stripeEnabled, stripeServer, cloudflareEnabled, cloudflareServer },
     use,
     testInfo: TestInfo,
   ) => {
@@ -358,15 +357,17 @@ export const test = base.extend<GhostInstanceFixture & InternalFixtures, WorkerF
             STRIPE_API_PROTOCOL: 'http',
           }
         : {};
-    const mailgunConfig =
-      mailgunEnabled && mailgunServer
+    const cloudflareConfig =
+      cloudflareEnabled && cloudflareServer
         ? {
-            bulkEmail__mailgun__apiKey: 'fake-mailgun-api-key',
-            bulkEmail__mailgun__domain: 'fake.mailgun.test',
-            bulkEmail__mailgun__baseUrl: `http://host.docker.internal:${mailgunServer.port}/v3`,
+            bulkEmail__cloudflare__accountId: 'fake-cloudflare-account',
+            bulkEmail__cloudflare__apiToken: 'fake-cloudflare-token',
+            bulkEmail__cloudflare__zoneId: 'fake-cloudflare-zone',
+            bulkEmail__cloudflare__domain: 'fake.cloudflare.test',
+            bulkEmail__cloudflare__baseUrl: `http://host.docker.internal:${cloudflareServer.port}/client/v4`,
           }
         : {};
-    const mergedConfig = { ...(config || {}), ...stripeConfig, ...mailgunConfig };
+    const mergedConfig = { ...(config || {}), ...stripeConfig, ...cloudflareConfig };
     const stripe = stripeServer
       ? {
           secretKey: STRIPE_SECRET_KEY,
@@ -480,7 +481,7 @@ export const test = base.extend<GhostInstanceFixture & InternalFixtures, WorkerF
   isolation: [undefined, { option: true }],
   labs: [undefined, { option: true }],
   stripeEnabled: [false, { option: true }],
-  mailgunEnabled: [false, { option: true }],
+  cloudflareEnabled: [false, { option: true }],
 
   stripeServer: async ({ stripeEnabled }, use) => {
     if (!stripeEnabled) {
@@ -498,30 +499,20 @@ export const test = base.extend<GhostInstanceFixture & InternalFixtures, WorkerF
     debug('Fake Stripe server stopped');
   },
 
-  mailgunServer: async ({ mailgunEnabled }, use) => {
-    if (!mailgunEnabled) {
+  cloudflareServer: async ({ cloudflareEnabled }, use) => {
+    if (!cloudflareEnabled) {
       await use(undefined);
       return;
     }
 
-    const server = new FakeMailgunServer();
+    const server = new FakeCloudflareEmailServer();
     await server.start();
-    debug('Fake Mailgun server started on port', server.port);
+    debug('Fake Cloudflare Email server started on port', server.port);
 
     await use(server);
 
     await server.stop();
-    debug('Fake Mailgun server stopped');
-  },
-
-  mailgun: async ({ mailgunEnabled, mailgunServer }, use) => {
-    if (!mailgunEnabled || !mailgunServer) {
-      await use(undefined);
-      return;
-    }
-
-    const service = new MailgunTestService(mailgunServer);
-    await use(service);
+    debug('Fake Cloudflare Email server stopped');
   },
 
   emailClient: async ({}, use) => {

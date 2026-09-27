@@ -234,7 +234,7 @@ test.describe('Ghost Admin - Publishing (React)', () => {
   // Both cases need email genuinely on offer, so the publish type is a real
   // choice rather than the only one left.
   test.describe('with a newsletter', () => {
-    test.use({ mailgunEnabled: true });
+    test.use({ cloudflareEnabled: true });
 
     test('draft - publish only puts the post on the site and sends no email', async ({ page }) => {
       // A member, a draft and the three publish steps do not fit the default

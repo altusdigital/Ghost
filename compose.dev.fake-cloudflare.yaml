@@ -1,0 +1,29 @@
+services:
+  fake-cloudflare-email:
+    build:
+      context: ./
+      dockerfile: docker/fake-cloudflare-email/Dockerfile
+    init: true
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:4010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+  ghost-dev:
+    environment:
+      bulkEmail__cloudflare__accountId: fake-cloudflare-account
+      bulkEmail__cloudflare__apiToken: fake-cloudflare-token
+      bulkEmail__cloudflare__zoneId: fake-cloudflare-zone
+      bulkEmail__cloudflare__domain: fake.cloudflare.test
+      bulkEmail__cloudflare__baseUrl: http://fake-cloudflare-email:4010/client/v4
+    depends_on:
+      fake-cloudflare-email:
+        condition: service_healthy

@@ -42,7 +42,7 @@ export default class SettingsService extends Service.extend(ValidationEngine) {
     }
 
     get mailgunIsConfigured() {
-        return this.mailgunApiKey && this.mailgunDomain && this.mailgunBaseUrl;
+        return this.cloudflareApiToken && this.cloudflareAccountId && this.cloudflareSendingDomain;
     }
 
     // the settings API endpoint is a little weird as it's singular and we have

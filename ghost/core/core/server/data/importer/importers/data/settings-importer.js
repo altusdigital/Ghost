@@ -210,6 +210,9 @@ class SettingsImporter extends BaseImporter {
         'members_subscription_settings',
         'stripe_connect_integration',
         'bulk_email_settings',
+        'mailgun_api_key',
+        'mailgun_domain',
+        'mailgun_base_url',
       ].includes(data.key);
     });
 

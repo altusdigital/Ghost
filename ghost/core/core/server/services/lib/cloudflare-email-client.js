@@ -4,7 +4,6 @@ const metrics = require('@tryghost/metrics');
 const errors = require('@tryghost/errors');
 
 const API_BASE = 'https://api.cloudflare.com/client/v4';
-const GRAPHQL_URL = `${API_BASE}/graphql`;
 const MAX_RECIPIENTS = 1;
 const RETRY_LIMIT = 3;
 const DEFAULT_PAGE_LIMIT = 50;
@@ -15,6 +14,7 @@ const DEFAULT_PAGE_LIMIT = 50;
  * @prop {string} apiToken
  * @prop {string} zoneId
  * @prop {string} domain
+ * @prop {string} [baseUrl] Optional API origin for a local fake. Production uses the Cloudflare API.
  */
 
 /**
@@ -279,7 +279,7 @@ module.exports = class CloudflareEmailClient {
       }
     }`;
 
-    const body = await this.#requestJson(GRAPHQL_URL, cfConfig.apiToken, {
+    const body = await this.#requestJson(`${apiBase(cfConfig)}/graphql`, cfConfig.apiToken, {
       query,
       variables: {
         zoneTag: cfConfig.zoneId,
@@ -363,7 +363,7 @@ module.exports = class CloudflareEmailClient {
     const cfConfig = this.#getConfig();
     try {
       await this.#requestJson(
-        `${API_BASE}/accounts/${cfConfig.accountId}/email/sending/suppressions`,
+        `${apiBase(cfConfig)}/accounts/${cfConfig.accountId}/email/sending/suppressions`,
         cfConfig.apiToken,
         { email, domain: cfConfig.domain },
         'DELETE',
@@ -413,7 +413,7 @@ module.exports = class CloudflareEmailClient {
 
   async #postSend(cfConfig, payload) {
     return this.#requestJson(
-      `${API_BASE}/accounts/${cfConfig.accountId}/email/sending/send`,
+      `${apiBase(cfConfig)}/accounts/${cfConfig.accountId}/email/sending/send`,
       cfConfig.apiToken,
       payload,
     );
@@ -474,6 +474,7 @@ module.exports = class CloudflareEmailClient {
       apiToken: chosen.apiToken,
       zoneId: chosen.zoneId,
       domain: chosen.domain,
+      baseUrl: typeof fromConfig?.baseUrl === 'string' ? fromConfig.baseUrl : undefined,
     };
   }
 
@@ -486,6 +487,13 @@ module.exports = class CloudflareEmailClient {
     return domains;
   }
 };
+
+function apiBase(cfConfig) {
+  if (typeof cfConfig?.baseUrl === 'string' && cfConfig.baseUrl.trim()) {
+    return cfConfig.baseUrl.replace(/\/$/, '');
+  }
+  return API_BASE;
+}
 
 function isUsableCloudflareConfig(chosen) {
   return Boolean(

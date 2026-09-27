@@ -1,6 +1,6 @@
 # Acceptance tier
 
-Full-app tests: the **real admin app** (the same provider stack as `src/main.tsx`) booted in a **real Chromium** instance via Vitest Browser Mode, against a **fake Ghost Admin API** — a simplified working implementation served in-browser through MSW, the same test-double family as e2e's fake-stripe-server and fake-mailgun-server. The shell's boot chrome (settings/config/site/me, sidebar members count, active theme, the ghost.org changelog feed) is handled by default — specs never mention it.
+Full-app tests: the **real admin app** (the same provider stack as `src/main.tsx`) booted in a **real Chromium** instance via Vitest Browser Mode, against a **fake Ghost Admin API** — a simplified working implementation served in-browser through MSW, the same test-double family as e2e's fake-stripe-server and fake Cloudflare Email server. The shell's boot chrome (settings/config/site/me, sidebar members count, active theme, the ghost.org changelog feed) is handled by default — specs never mention it.
 
 ## Anatomy of a spec
 

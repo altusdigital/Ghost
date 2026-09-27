@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store,id=pnpm-store \
 # Use the same fake API and forwarding code as browser E2E tests.
 COPY e2e/tsconfig.json e2e/tsconfig.json
 COPY e2e/helpers/services/fake-server.ts e2e/helpers/services/fake-server.ts
-COPY e2e/helpers/services/mailgun/fake-mailgun-server.ts e2e/helpers/services/mailgun/fake-mailgun-server.ts
-COPY --chmod=755 docker/fake-mailgun/entrypoint.sh /usr/local/bin/fake-mailgun
+COPY e2e/helpers/services/cloudflare/fake-cloudflare-email-server.ts e2e/helpers/services/cloudflare/fake-cloudflare-email-server.ts
+COPY --chmod=755 docker/fake-cloudflare-email/entrypoint.sh /usr/local/bin/fake-cloudflare-email
 WORKDIR /home/ghost/e2e
-ENTRYPOINT ["/usr/local/bin/fake-mailgun"]
+ENTRYPOINT ["/usr/local/bin/fake-cloudflare-email"]
