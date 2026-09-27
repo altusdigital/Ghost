@@ -136,6 +136,7 @@ async function createPublishedPostEmail(agent, settings = {}, email_recipient_fi
   return emailModel;
 }
 let lastEmailModel;
+let lastEmailCallIndex = 0;
 
 /**
  * @typedef {{html: string, plaintext: string, emailModel: any, recipientData: any, from: string, replyTo?: string}} SendEmail
@@ -146,6 +147,9 @@ let lastEmailModel;
  * @returns {Promise<SendEmail>}
  */
 async function sendEmail(agent, settings, email_recipient_filter) {
+  const mailgunCreateMessageStub = mockManager.getMailgunCreateMessageStub();
+  const callCountBefore = mailgunCreateMessageStub ? mailgunCreateMessageStub.callCount : 0;
+
   // Prepare a post and email model
   const emailModel = await createPublishedPostEmail(agent, settings, email_recipient_filter);
 
@@ -161,6 +165,7 @@ async function sendEmail(agent, settings, email_recipient_filter) {
   assert.equal(emailModel.get('status'), 'submitted');
 
   lastEmailModel = emailModel;
+  lastEmailCallIndex = callCountBefore;
 
   // Get the email that was sent
   return { emailModel, ...(await getLastEmail()) };
@@ -171,6 +176,9 @@ async function sendEmail(agent, settings, email_recipient_filter) {
  * @returns {Promise<{emailModel: any}>}
  */
 async function sendFailedEmail(agent, settings, email_recipient_filter) {
+  const mailgunCreateMessageStub = mockManager.getMailgunCreateMessageStub();
+  const callCountBefore = mailgunCreateMessageStub ? mailgunCreateMessageStub.callCount : 0;
+
   // Prepare a post and email model
   const emailModel = await createPublishedPostEmail(agent, settings, email_recipient_filter);
 
@@ -186,6 +194,7 @@ async function sendFailedEmail(agent, settings, email_recipient_filter) {
   assert.equal(emailModel.get('status'), 'failed');
 
   lastEmailModel = emailModel;
+  lastEmailCallIndex = callCountBefore;
 
   // Get the email that was sent
   return { emailModel };
@@ -193,6 +202,33 @@ async function sendFailedEmail(agent, settings, email_recipient_filter) {
 
 async function retryEmail(agent, emailId) {
   await agent.put(`emails/${emailId}/retry`).expectStatus(200);
+}
+
+/**
+ * Picks the provider call for the recipient Mailgun listed first.
+ * @param {import('sinon').SinonSpyCall[]} calls
+ */
+async function callForFirstMailgunRecipient(calls) {
+  if (calls.length === 1 || !lastEmailModel) {
+    return calls[0];
+  }
+
+  const stored = await models.EmailRecipient.findAll({
+    filter: `email_id:'${lastEmailModel.id}'`,
+  });
+  const firstRecipient = stored.models.reduce((best, recipient) => {
+    const memberId = recipient.get('member_id');
+    if (!best || memberId > best.get('member_id')) {
+      return recipient;
+    }
+    return best;
+  }, null);
+  const email = firstRecipient && firstRecipient.get('member_email');
+  const match = calls.find((candidate) => {
+    const recipientMap = candidate.args[1] || {};
+    return email && Object.prototype.hasOwnProperty.call(recipientMap, email);
+  });
+  return match || calls[0];
 }
 
 /**
@@ -204,16 +240,22 @@ async function getLastEmail() {
   assert.ok(mailgunCreateMessageStub);
   sinon.assert.called(mailgunCreateMessageStub);
 
-  const messageData = mailgunCreateMessageStub.lastCall.lastArg;
-  let html = messageData.html;
-  let plaintext = messageData.text;
-  const recipientVariables = JSON.parse(messageData['recipient-variables']);
-  const recipientData = recipientVariables[Object.keys(recipientVariables)[0]];
-
-  for (const [key, value] of Object.entries(recipientData)) {
-    html = html.replace(new RegExp(`%recipient.${key}%`, 'g'), value);
-    plaintext = plaintext.replace(new RegExp(`%recipient.${key}%`, 'g'), value);
-  }
+  // Cloudflare sends already-personalized HTML, one recipient per call.
+  // Mailgun put every recipient in one payload and snapshots used the first
+  // key, which is the highest member id (batches are built id DESC).
+  const calls = mailgunCreateMessageStub.getCalls().slice(lastEmailCallIndex);
+  assert.ok(calls.length > 0, 'Expected this send to call the email provider');
+  const call = await callForFirstMailgunRecipient(calls);
+  const messageData = call.args[0];
+  const recipientMap = call.args[1] || {};
+  const recipientData = recipientMap[Object.keys(recipientMap)[0]] || {};
+  // The open pixel includes a per-send member address. Strip it before snapshots
+  // and link-tracking assertions, which look at the rendered newsletter body.
+  const html = (messageData.html || '').replace(
+    /<img src="[^"]*\/email\/open\/\?[^"]*"[^>]*>/g,
+    '',
+  );
+  const plaintext = messageData.plaintext || messageData.text;
 
   return {
     emailModel: lastEmailModel,

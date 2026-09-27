@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "public": [
     { "name": "m", "reason": "Link tracking" },
+    { "name": "e", "reason": "Newsletter open tracking" },
+    { "name": "k", "reason": "Newsletter open tracking signature" },
     { "name": "v", "reason": "Asset invalidation" },
     { "name": "r", "reason": "Password-protected site redirects" },
     { "name": "token", "reason": "Members API authentication" },

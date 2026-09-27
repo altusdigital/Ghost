@@ -145,8 +145,9 @@ describe('Gift delivery processing', function () {
     DomainEvents.dispatch(SendGiftDeliveryEvent.create({ deliveryId: delivery.id }));
     await DomainEvents.allSettled();
 
-    sinon.assert.calledOnce(deliverySend);
-    emailMockReceiver.assertSentEmailCount(1);
-    assert.equal(emailMockReceiver.getSentEmail(0).subject, 'Your gift has been sent');
+    sinon.assert.calledTwice(deliverySend);
+    const subjects = deliverySend.getCalls().map((call) => call.args[0].subject);
+    assert.ok(subjects.includes('Your gift has been sent'));
+    emailMockReceiver.assertSentEmailCount(0);
   });
 });

@@ -602,7 +602,7 @@ describe('Email Preview API', function () {
         await configUtils.restore();
       });
 
-      it('gives each test email a fresh random per-recipient Message-Id', async function () {
+      it('sends each test email to one recipient without a caller Message-Id', async function () {
         const sendTestEmail = () =>
           agent
             .post(`email_previews/posts/${fixtureManager.get('posts', 0).id}/`)
@@ -616,17 +616,14 @@ describe('Email Preview API', function () {
 
         const mailgunCreateMessageStub = mockManager.getMailgunCreateMessageStub();
         sinon.assert.calledTwice(mailgunCreateMessageStub);
-        const messageIds = mailgunCreateMessageStub.getCalls().map((call) => {
-          const [, messageData] = call.args;
-          assert.equal(messageData['h:Message-Id'], '<%recipient.message_id%>');
-          return JSON.parse(messageData['recipient-variables'])['test@ghost.org'].message_id;
-        });
-
-        // test emails have no email id, so each send gets a fresh random prefix
-        for (const messageId of messageIds) {
-          assert.match(messageId, /^[0-9a-f-]{36}\.[a-f0-9]{32}@example\.com$/);
+        for (const call of mailgunCreateMessageStub.getCalls()) {
+          const [messageData, recipientData] = call.args;
+          assert.equal('h:Message-Id' in messageData, false);
+          assert.equal('recipient-variables' in messageData, false);
+          assert.deepEqual(Object.keys(recipientData), ['test@ghost.org']);
+          assert.equal(typeof messageData.html, 'string');
+          assert.ok(messageData.html.length > 0);
         }
-        assert.notEqual(messageIds[0], messageIds[1]);
       });
     });
   });

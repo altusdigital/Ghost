@@ -27,7 +27,7 @@ async function bindPendingProviderIds(knex, events) {
         .join('email_batches as eb', 'eb.id', 'er.batch_id')
         .where('er.member_email', event.recipientEmail)
         .where('eb.provider_message_id', 'like', 'pending.%')
-        .orderBy('er.created_at', 'desc')
+        .orderBy('er.id', 'desc')
         .first('eb.id as id'),
       providerId: event.providerId,
     });
@@ -51,7 +51,7 @@ async function bindPendingProviderIds(knex, events) {
       query: knex('gift_deliveries')
         .where('recipient_email', event.recipientEmail)
         .where('email_provider_message_id', 'like', 'pending.%')
-        .orderBy('created_at', 'desc')
+        .orderBy('id', 'desc')
         .first('id'),
       providerId: event.providerId,
     });

@@ -47,15 +47,14 @@ class CloudflareEmailProvider {
 
     logging.info(`Sending email to ${recipients.length} recipients`);
     const startTime = Date.now();
+    const recipient = recipients[0];
 
     try {
-      if (recipients.length !== 1) {
+      if (recipients.length !== 1 || !recipient) {
         throw new errors.IncorrectUsageError({
           message: 'Cloudflare Email sends one recipient at a time',
         });
       }
-
-      const recipient = recipients[0];
       const rendered = this.#personalize(
         html,
         plaintext,
@@ -77,7 +76,7 @@ class CloudflareEmailProvider {
           id: emailId,
         },
         {
-          [recipient.email]: listUnsubscribeVars(recipient.replacements),
+          [recipient.email]: recipientVars(recipient.replacements),
         },
         [],
       );
@@ -91,10 +90,17 @@ class CloudflareEmailProvider {
       debug(`failed to send message (${Date.now() - startTime}ms)`);
       throw new errors.EmailError({
         statusCode: error.status,
-        message: `${error.message || 'Cloudflare Email error'}`.slice(0, 2000),
-        errorDetails: e.messageData
-          ? JSON.stringify({ error, messageData: e.messageData })
-          : undefined,
+        message: `${error.message || 'Cloudflare Email error'}${
+          error.details ? `: ${error.details}` : ''
+        }`.slice(0, 2000),
+        errorDetails: JSON.stringify({
+          error: {
+            status: error.status,
+            message: error.message,
+            details: error.details,
+          },
+          messageData: e.messageData || { to: [recipient.email] },
+        }),
         context: error.details
           ? `Cloudflare Email ${error.status}: ${error.details}`
           : 'Cloudflare Email error',
@@ -116,23 +122,11 @@ class CloudflareEmailProvider {
     const byId = new Map(
       (replacements || []).map((replacement) => [replacement.id, replacement.value]),
     );
-    let renderedHtml = html;
-    let renderedText = plaintext;
 
-    for (const def of replacementDefinitions) {
-      const raw = byId.has(def.id) ? byId.get(def.id) : '';
-      const textValue = raw ?? '';
-      const htmlValue =
-        !def.trusted && typeof textValue === 'string' ? escapeExpression(textValue) : textValue;
-      if (renderedHtml) {
-        renderedHtml = renderedHtml.replace(def.token, htmlValue);
-      }
-      if (renderedText) {
-        renderedText = renderedText.replace(def.token, textValue);
-      }
-    }
-
-    return { html: renderedHtml, plaintext: renderedText };
+    return {
+      html: applyReplacements(html, replacementDefinitions, byId, true),
+      plaintext: applyReplacements(plaintext, replacementDefinitions, byId, false),
+    };
   }
 
   #addOpenPixel(html, emailId, recipient) {
@@ -159,11 +153,42 @@ class CloudflareEmailProvider {
   }
 }
 
-function listUnsubscribeVars(replacements = []) {
+function applyReplacements(body, definitions, byId, asHtml) {
+  if (!body || !definitions.length) {
+    return body;
+  }
+  const values = definitions.map((def) => {
+    const raw = byId.has(def.id) ? byId.get(def.id) : '';
+    const textValue = raw ?? '';
+    const value =
+      asHtml && !def.trusted && typeof textValue === 'string'
+        ? escapeExpression(textValue)
+        : textValue;
+    return { token: def.token, value: value ?? '' };
+  });
+  const pattern = definitions
+    .map(({ token }) => `(?:${token instanceof RegExp ? token.source : token})`)
+    .join('|');
+  // One pass over the original body. Values can contain token text (a member
+  // name, for example) and must not be expanded again.
+  return body.replace(new RegExp(pattern, 'g'), (match) => {
+    for (const { token, value } of values) {
+      if (token instanceof RegExp) {
+        token.lastIndex = 0;
+      }
+      if (String(match).search(token) !== -1) {
+        return value;
+      }
+    }
+    return match;
+  });
+}
+
+function recipientVars(replacements = []) {
   const vars = {};
   for (const replacement of replacements) {
-    if (replacement.id === 'list_unsubscribe' && replacement.value) {
-      vars.list_unsubscribe = replacement.value;
+    if (replacement?.id) {
+      vars[replacement.id] = replacement.value;
     }
   }
   return vars;

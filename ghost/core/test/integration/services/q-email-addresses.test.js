@@ -77,10 +77,35 @@ async function configureNewsletter({ sender_email, sender_reply_to, sender_name 
   await defaultNewsletter.save();
 }
 
-function assertFromAddress(from, replyTo) {
+function sentTransactionalEmails() {
+  const emails = [];
   let i = 0;
   while (emailMockReceiver.getSentEmail(i)) {
-    const email = emailMockReceiver.getSentEmail(i);
+    emails.push(emailMockReceiver.getSentEmail(i));
+    i += 1;
+  }
+  if (emails.length > 0) {
+    return emails;
+  }
+
+  const providerStub = mockManager.getMailgunCreateMessageStub();
+  if (!providerStub) {
+    return emails;
+  }
+  return providerStub.getCalls().map((call) => {
+    const message = call.args[0] || {};
+    return {
+      from: message.from,
+      replyTo: message.replyTo || message.reply_to,
+      subject: message.subject,
+    };
+  });
+}
+
+function assertFromAddress(from, replyTo) {
+  const emails = sentTransactionalEmails();
+
+  emails.forEach((email, i) => {
     assert.equal(
       email.from,
       from,
@@ -99,17 +124,15 @@ function assertFromAddress(from, replyTo) {
         `ReplyTo address (${email.replyTo}) of ${i + 1}th email (${email.subject}) does not match ${replyTo}`,
       );
     }
+  });
 
-    i += 1;
-  }
-
-  assert(i > 0, 'No emails were sent');
+  assert(emails.length > 0, 'No emails were sent');
 }
 
 async function assertFromAddressNewsletter(aFrom, aReplyTo) {
   const email = await getLastEmail();
   const { from } = email;
-  const replyTo = email['h:Reply-To'];
+  const replyTo = email.replyTo || email.reply_to || email['h:Reply-To'];
 
   assert.equal(from, aFrom, `From address (${from}) does not match ${aFrom}`);
 

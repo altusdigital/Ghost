@@ -299,34 +299,60 @@ module.exports = class CloudflareEmailClient {
    * @returns {object|null}
    */
   normalizeEvent(event) {
-    const providerId = event?.messageId;
-    const recipientEmail = event?.to;
+    const rawId = event?.messageId || event?.message?.headers?.['message-id'];
+    const providerId = typeof rawId === 'string' ? rawId.replace(/^<|>$/g, '') : rawId;
+    const recipientEmail = event?.to || event?.recipient;
     if (!providerId || !recipientEmail) {
       logging.error('Received invalid event from Cloudflare Email');
       logging.error(event);
       return null;
     }
 
-    const mapped = mapEventType(event.eventType || event.status);
+    const rawType = event?.eventType || event?.status || event?.event;
+    let mapped = mapEventType(rawType);
+    if (mapped?.type === 'failed' && event?.severity === 'temporary') {
+      mapped = { type: 'failed', severity: 'temporary' };
+    } else if (mapped?.type === 'failed' && event?.severity === 'permanent') {
+      mapped = { type: 'failed', severity: 'permanent' };
+    }
     if (!mapped) {
+      mapped = { type: String(rawType || 'unknown') };
+    }
+
+    const timestamp = eventTimestamp(event);
+    if (Number.isNaN(timestamp.getTime())) {
+      logging.error('Received invalid event from Cloudflare Email');
+      logging.error(event);
       return null;
     }
 
+    const deliveryStatus = event?.['delivery-status'];
+    const error = event?.errorDetail
+      ? {
+          code: event.errorCause || null,
+          message: String(event.errorDetail).substring(0, 2000),
+          enhancedCode: null,
+        }
+      : deliveryStatus
+        ? {
+            code: deliveryStatus.code ?? null,
+            message: String(deliveryStatus.description || deliveryStatus.message || '').substring(
+              0,
+              2000,
+            ),
+            enhancedCode: deliveryStatus['enhanced-code'] ?? null,
+          }
+        : null;
+
     return {
-      id: `${providerId}:${mapped.type}:${recipientEmail}`,
+      id: event.id || `${providerId}:${mapped.type}:${recipientEmail}`,
       type: mapped.type,
       severity: mapped.severity,
       recipientEmail,
-      subject: event.subject,
+      subject: event.subject || event?.message?.headers?.subject,
       providerId,
-      timestamp: new Date(event.datetime),
-      error: event.errorDetail
-        ? {
-            code: event.errorCause || null,
-            message: String(event.errorDetail).substring(0, 2000),
-            enhancedCode: null,
-          }
-        : null,
+      timestamp,
+      error,
     };
   }
 
@@ -506,8 +532,28 @@ function buildHeaders(message, recipientVars) {
   return headers;
 }
 
+function eventTimestamp(event) {
+  if (event?.datetime) {
+    return new Date(event.datetime);
+  }
+  if (event?.timestamp === undefined || event?.timestamp === null) {
+    return new Date(NaN);
+  }
+  const numeric = Number(event.timestamp);
+  if (Number.isNaN(numeric)) {
+    return new Date(event.timestamp);
+  }
+  return new Date(numeric < 1e12 ? numeric * 1000 : numeric);
+}
+
 function mapEventType(eventType) {
   const value = String(eventType || '').toLowerCase();
+  if (value === 'opened' || value === 'open') {
+    return { type: 'opened' };
+  }
+  if (value.includes('unsubscrib')) {
+    return { type: 'unsubscribed' };
+  }
   if (value.includes('delivered')) {
     return { type: 'delivered' };
   }

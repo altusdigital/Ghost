@@ -53,12 +53,11 @@ describe('Resume interrupted sends', function () {
     //    (post + email + batches + recipients + members).
     const { emailModel } = await sendEmail(agent);
 
-    // Sanity: 4 fixture members + batchSize=2 = 2 batches, all submitted.
+    // Sanity: 4 fixture members, one recipient per Cloudflare request.
     let batches = (await models.EmailBatch.findAll({ filter: `email_id:'${emailModel.id}'` }))
       .models;
-    assert.equal(batches.length, 2, 'expected exactly 2 batches after initial send');
-    assert.equal(batches[0].get('status'), 'submitted');
-    assert.equal(batches[1].get('status'), 'submitted');
+    assert.equal(batches.length, 4, 'expected exactly 4 batches after initial send');
+    assert.ok(batches.every((batch) => batch.get('status') === 'submitted'));
 
     // 2. Mutate the DB to simulate a crash mid-send: one batch never made it to Mailgun,
     //    the other did; the parent email row is stuck in `submitting`.
@@ -132,12 +131,12 @@ describe('Resume interrupted sends', function () {
     // Batches and recipients were created by the resumed job, not by the original send.
     const batches = (await models.EmailBatch.findAll({ filter: `email_id:'${emailModel.id}'` }))
       .models;
-    assert.equal(batches.length, 2);
+    assert.equal(batches.length, 4);
     const recipients = await models.EmailRecipient.findAll({
       filter: `email_id:'${emailModel.id}'`,
     });
     assert.equal(recipients.models.length, 4);
-    sinon.assert.calledTwice(mailgunStub);
+    sinon.assert.callCount(mailgunStub, 4);
   });
 
   it('marks email as failed when an orphan submitting batch is encountered', async function () {
@@ -149,7 +148,7 @@ describe('Resume interrupted sends', function () {
 
     let batches = (await models.EmailBatch.findAll({ filter: `email_id:'${emailModel.id}'` }))
       .models;
-    assert.equal(batches.length, 2);
+    assert.equal(batches.length, 4);
 
     const [batchA, batchB] = batches;
     // batchA: stays submitted (already accepted by Mailgun on the original run)

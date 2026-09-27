@@ -1395,7 +1395,7 @@ processingModes.forEach(({ name, batchProcessing }) => {
       assert.equal(result, 0);
 
       sinon.assert.called(errorLog);
-      sinon.assert.calledWith(errorLog, 'Received invalid event from Mailgun');
+      sinon.assert.calledWith(errorLog, 'Received invalid event from Cloudflare Email');
     });
   });
 });
