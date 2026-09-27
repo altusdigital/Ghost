@@ -50,7 +50,7 @@ function seed() {
         created_at: email.created_at,
         member_segment: 'status:paid',
         count: { recipients: 1234 },
-        mailgun_message_id: 'provider-id',
+        provider_message_id: 'provider-id',
         error_status_code: 500,
         error_message: 'Provider unavailable',
       },

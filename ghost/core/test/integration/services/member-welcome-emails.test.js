@@ -6,7 +6,7 @@ const { mockManager } = require('../../utils/e2e-framework');
 const models = require('../../../core/server/models');
 const db = require('../../../core/server/data/db');
 const config = require('../../../core/shared/config');
-const MailgunClient = require('../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../core/server/services/lib/cloudflare-email-client');
 const mailService = require('../../../core/server/services/mail');
 const settingsHelpers = require('../../../core/server/services/settings-helpers');
 const {
@@ -201,7 +201,9 @@ describe('Member Welcome Emails Integration', function () {
 
   describe('Sending welcome emails', function () {
     beforeEach(function () {
-      sinon.stub(MailgunClient.prototype, 'send').resolves({ id: '<bulk-mailgun-message-id>' });
+      sinon
+        .stub(CloudflareEmailClient.prototype, 'send')
+        .resolves({ id: '<bulk-mailgun-message-id>' });
       sinon.stub(mailService.GhostMailer.prototype, 'send').resolves('Mail sent');
     });
 
@@ -495,7 +497,7 @@ describe('Member Welcome Emails Integration', function () {
       await sendAutomationEmail();
 
       sinon.assert.calledOnceWithExactly(
-        MailgunClient.prototype.send,
+        CloudflareEmailClient.prototype.send,
         sinon.match({
           from: '"Newsletter Sender" <newsletter@example.com>',
           replyTo: 'newsletter-reply@example.com',
@@ -508,8 +510,8 @@ describe('Member Welcome Emails Integration', function () {
     it('tags automation emails for automation analytics', async function () {
       await sendAutomationEmail();
 
-      sinon.assert.calledOnce(MailgunClient.prototype.send);
-      const sendCall = MailgunClient.prototype.send.firstCall;
+      sinon.assert.calledOnce(CloudflareEmailClient.prototype.send);
+      const sendCall = CloudflareEmailClient.prototype.send.firstCall;
       assert.deepEqual(sendCall.args[0].tags, ['automation-email']);
     });
 
@@ -518,8 +520,8 @@ describe('Member Welcome Emails Integration', function () {
 
       await sendAutomationEmail();
 
-      sinon.assert.calledOnce(MailgunClient.prototype.send);
-      const sendCall = MailgunClient.prototype.send.firstCall;
+      sinon.assert.calledOnce(CloudflareEmailClient.prototype.send);
+      const sendCall = CloudflareEmailClient.prototype.send.firstCall;
       assert.deepEqual(sendCall.args[0].tags, ['automation-email', 'blog-123']);
     });
 
@@ -527,7 +529,7 @@ describe('Member Welcome Emails Integration', function () {
       await sendAutomationEmail({ trackOpens: true });
 
       sinon.assert.calledOnceWithExactly(
-        MailgunClient.prototype.send,
+        CloudflareEmailClient.prototype.send,
         sinon.match({
           track_opens: true,
         }),
@@ -538,7 +540,7 @@ describe('Member Welcome Emails Integration', function () {
 
     it('returns the mail transport response for automation emails', async function () {
       const sendResponse = { id: '<mailgun-message-id>' };
-      MailgunClient.prototype.send.resolves(sendResponse);
+      CloudflareEmailClient.prototype.send.resolves(sendResponse);
 
       const result = await sendAutomationEmail();
 
@@ -563,7 +565,7 @@ describe('Member Welcome Emails Integration', function () {
       await sendAutomationEmail();
 
       sinon.assert.calledOnceWithExactly(
-        MailgunClient.prototype.send,
+        CloudflareEmailClient.prototype.send,
         sinon.match({
           from: '"Design Sender" <design@example.com>',
           replyTo: 'design-reply@example.com',
@@ -584,7 +586,7 @@ describe('Member Welcome Emails Integration', function () {
       await sendAutomationEmail();
 
       sinon.assert.calledOnceWithExactly(
-        MailgunClient.prototype.send,
+        CloudflareEmailClient.prototype.send,
         sinon.match({
           from: settingsHelpers.getDefaultEmail().address,
           replyTo: undefined,
@@ -600,7 +602,7 @@ describe('Member Welcome Emails Integration', function () {
       await sendAutomationEmail();
 
       sinon.assert.calledOnceWithExactly(
-        MailgunClient.prototype.send,
+        CloudflareEmailClient.prototype.send,
         sinon.match({
           from: settingsHelpers.getDefaultEmail().address,
           replyTo: undefined,
@@ -615,8 +617,8 @@ describe('Member Welcome Emails Integration', function () {
 
       await sendAutomationEmail();
 
-      sinon.assert.calledOnce(MailgunClient.prototype.send);
-      const sendCall = MailgunClient.prototype.send.firstCall;
+      sinon.assert.calledOnce(CloudflareEmailClient.prototype.send);
+      const sendCall = CloudflareEmailClient.prototype.send.firstCall;
       const message = sendCall.args[0];
       const recipientData = sendCall.args[1];
 
@@ -633,8 +635,8 @@ describe('Member Welcome Emails Integration', function () {
     it('does not add an unsubscribe link or one-click headers when automations is disabled', async function () {
       await sendAutomationEmail();
 
-      sinon.assert.calledOnce(MailgunClient.prototype.send);
-      const [message, recipientData] = MailgunClient.prototype.send.firstCall.args;
+      sinon.assert.calledOnce(CloudflareEmailClient.prototype.send);
+      const [message, recipientData] = CloudflareEmailClient.prototype.send.firstCall.args;
 
       assert.doesNotMatch(message.html, /updatesandannouncements=1/);
       assert.deepEqual(recipientData, { 'automation-member@example.com': {} });
@@ -792,7 +794,9 @@ describe('Member Welcome Emails Integration', function () {
     beforeEach(function () {
       memberWelcomeEmailService.api = null;
       memberWelcomeEmailService.init();
-      sinon.stub(MailgunClient.prototype, 'send').resolves({ id: '<bulk-mailgun-message-id>' });
+      sinon
+        .stub(CloudflareEmailClient.prototype, 'send')
+        .resolves({ id: '<bulk-mailgun-message-id>' });
       sinon.stub(mailService.GhostMailer.prototype, 'send').resolves('Mail sent');
     });
 

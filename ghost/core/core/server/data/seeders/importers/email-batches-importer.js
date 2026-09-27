@@ -32,7 +32,7 @@ class EmailBatchesImporter extends TableImporter {
     return {
       id: this.fastFakeObjectId(),
       email_id: this.model.id,
-      mailgun_message_id: `${new Date()
+      provider_message_id: `${new Date()
         .toISOString()
         .split('.')[0]
         .replace(

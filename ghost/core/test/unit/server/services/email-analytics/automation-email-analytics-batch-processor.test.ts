@@ -11,7 +11,7 @@ function buildRecipient(
 ): AutomatedEmailRecipientWithMailgunId {
   return {
     id: 'recipient-1',
-    mailgun_message_id: 'message-1',
+    provider_message_id: 'message-1',
     automation_action_revision_id: 'revision-1',
     ...overrides,
   };
@@ -93,10 +93,10 @@ describe('AutomationEmailAnalyticsBatchProcessor', function () {
 
     it('handles a mix of events for several recipients', async function () {
       const automationsApi = buildAutomationsApi([
-        buildRecipient({ id: 'recipient-1', mailgun_message_id: 'message-1' }),
+        buildRecipient({ id: 'recipient-1', provider_message_id: 'message-1' }),
         buildRecipient({
           id: 'recipient-2',
-          mailgun_message_id: 'message-2',
+          provider_message_id: 'message-2',
           automation_action_revision_id: 'revision-2',
         }),
       ]);
@@ -149,17 +149,17 @@ describe('AutomationEmailAnalyticsBatchProcessor', function () {
       const automationsApi = buildAutomationsApi([
         buildRecipient({
           id: 'recipient-1',
-          mailgun_message_id: 'message-1',
+          provider_message_id: 'message-1',
           automation_action_revision_id: 'revision-1',
         }),
         buildRecipient({
           id: 'recipient-2',
-          mailgun_message_id: 'message-2',
+          provider_message_id: 'message-2',
           automation_action_revision_id: 'revision-1',
         }),
         buildRecipient({
           id: 'recipient-3',
-          mailgun_message_id: 'message-3',
+          provider_message_id: 'message-3',
           automation_action_revision_id: 'revision-2',
         }),
       ]);

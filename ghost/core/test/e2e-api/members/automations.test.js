@@ -6,7 +6,7 @@ const { agentProvider, fixtureManager, mockManager } = require('../../utils/e2e-
 const models = require('../../../core/server/models');
 const db = require('../../../core/server/data/db');
 const adapterManager = require('../../../core/server/services/adapter-manager').default;
-const MailgunClient = require('../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../core/server/services/lib/cloudflare-email-client');
 const mailService = require('../../../core/server/services/mail');
 const membersService = require('../../../core/server/services/members');
 const { getSignedAdminToken } = require('../../../core/server/adapters/scheduling/utils');
@@ -153,7 +153,7 @@ async function updateAutomation(automation, overrides = {}) {
 }
 
 function getAutomationEmailSends() {
-  return MailgunClient.prototype.send
+  return CloudflareEmailClient.prototype.send
     .getCalls()
     .filter((call) => call.args[0].tags?.includes('automation-email'));
 }
@@ -212,7 +212,9 @@ describe('Members Automations', function () {
     const schedulerAdapter = adapterManager.getAdapter('scheduling');
     sinon.stub(schedulerAdapter, 'schedule');
     sinon.stub(schedulerAdapter, '_pingUrl');
-    sinon.stub(MailgunClient.prototype, 'send').resolves({ id: '<bulk-mailgun-message-id>' });
+    sinon
+      .stub(CloudflareEmailClient.prototype, 'send')
+      .resolves({ id: '<bulk-mailgun-message-id>' });
     sinon.stub(mailService.GhostMailer.prototype, 'send').resolves('Mail sent');
     await setupAutomationsFixture();
   });
@@ -274,7 +276,7 @@ describe('Members Automations', function () {
       [['automation-email'], ['automation-email']],
     );
     sinon.assert.calledWithMatch(
-      MailgunClient.prototype.send,
+      CloudflareEmailClient.prototype.send,
       {
         subject: 'Welcome!',
       },
@@ -283,7 +285,7 @@ describe('Members Automations', function () {
       },
     );
     sinon.assert.calledWithMatch(
-      MailgunClient.prototype.send,
+      CloudflareEmailClient.prototype.send,
       {
         subject: 'Follow up',
       },

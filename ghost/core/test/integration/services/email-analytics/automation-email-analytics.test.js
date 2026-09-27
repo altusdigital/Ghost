@@ -5,7 +5,7 @@ const { default: ObjectId } = require('bson-objectid');
 const sinon = require('sinon');
 const { agentProvider } = require('../../../utils/e2e-framework');
 const testUtils = require('../../../utils');
-const MailgunClient = require('../../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../../core/server/services/lib/cloudflare-email-client');
 const {
   AUTOMATION_EMAIL_TAG,
   DEFAULT_EMAIL_DESIGN_SETTING_SLUG,
@@ -48,7 +48,7 @@ describe('Automation email analytics', function () {
     emailDesignSettingId = emailDesignSetting.id;
 
     sinon
-      .stub(MailgunClient.prototype, 'fetchEvents')
+      .stub(CloudflareEmailClient.prototype, 'fetchEvents')
       .callsFake(async function (mailgunOptions, batchHandler) {
         const wantedTags = mailgunOptions.tags ? mailgunOptions.tags.split(' AND ') : [];
         const wantedEventTypes = mailgunOptions.event.split(' OR ');
@@ -193,7 +193,7 @@ describe('Automation email analytics', function () {
     });
     return await testUtils
       .knex('automated_email_recipients')
-      .where('mailgun_message_id', mailgunMessageId)
+      .where('provider_message_id', mailgunMessageId)
       .first();
   }
 

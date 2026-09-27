@@ -870,7 +870,7 @@ class BatchSendingService {
           await batch.save(
             {
               status: 'submitted',
-              mailgun_message_id: response.id,
+              provider_message_id: response.id,
               // reset error fields when sending succeeds
               error_status_code: null,
               error_message: null,

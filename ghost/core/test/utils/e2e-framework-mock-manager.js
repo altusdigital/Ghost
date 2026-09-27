@@ -21,7 +21,7 @@ let mocks = {};
 let emailCount = 0;
 
 // Mockable services
-const MailgunClient = require('../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../core/server/services/lib/cloudflare-email-client');
 const mailService = require('../../core/server/services/mail/index');
 const originalMailServiceSendMail = mailService.GhostMailer.prototype.sendMail;
 const labs = require('../../core/shared/labs');
@@ -255,23 +255,21 @@ const mockMail = (response = 'Mail is disabled') => {
 let mailgunCreateMessageStub;
 
 const mockMailgun = (customStubbedSend) => {
-  mockSetting('mailgun_api_key', 'test');
-  mockSetting('mailgun_domain', 'example.com');
-  mockSetting('mailgun_base_url', 'test');
+  mockSetting('cloudflare_account_id', 'account');
+  mockSetting('cloudflare_api_token', 'token');
+  mockSetting('cloudflare_zone_id', 'zone');
+  mockSetting('cloudflare_sending_domain', 'example.com');
 
   mailgunCreateMessageStub = customStubbedSend
     ? sinon.stub().callsFake(customStubbedSend)
     : sinon.fake.resolves({
-        id: `<${new Date().getTime()}.${0}.5817@samples.mailgun.org>`,
+        id: `<${new Date().getTime()}.${0}.5817@example.com>`,
       });
 
-  // We need to stub the Mailgun client before starting Ghost
-  sinon.stub(MailgunClient.prototype, 'getInstance').returns({
-    messages: {
-      create: async function () {
-        return await mailgunCreateMessageStub.call(this, ...arguments);
-      },
-    },
+  sinon.stub(CloudflareEmailClient.prototype, 'isConfigured').returns(true);
+  sinon.stub(CloudflareEmailClient.prototype, 'fetchEvents').resolves({});
+  sinon.stub(CloudflareEmailClient.prototype, 'send').callsFake(async function () {
+    return await mailgunCreateMessageStub.call(this, ...arguments);
   });
 };
 

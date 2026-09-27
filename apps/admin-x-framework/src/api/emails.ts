@@ -97,7 +97,7 @@ export const useRetryEmail = createMutation<EmailsResponseType, RetryEmailPayloa
 export interface EmailDebugBatch extends EmailBatch {
   created_at?: string | null;
   member_segment?: string | null;
-  mailgun_message_id?: string | null;
+  provider_message_id?: string | null;
   error_message?: string | null;
   error_status_code?: number | null;
   count?: { recipients: number };

@@ -158,6 +158,19 @@ module.exports = class GhostMailer {
     }
 
     const messageToSend = createMessage(message);
+    const CloudflareEmailClient = require('../lib/cloudflare-email-client');
+    const cloudflareClient = new CloudflareEmailClient({ config, settings: settingsCache });
+    if (cloudflareClient.isConfigured()) {
+      return cloudflareClient.sendTransactional({
+        to: messageToSend.to,
+        subject: messageToSend.subject,
+        html: messageToSend.html,
+        text: messageToSend.text,
+        from: messageToSend.from,
+        replyTo: messageToSend.replyTo,
+        headers: message.headers,
+      });
+    }
     if (this.state.usingMailgun) {
       const tags = this.getTags(message.tags);
       if (tags.length > 0) {

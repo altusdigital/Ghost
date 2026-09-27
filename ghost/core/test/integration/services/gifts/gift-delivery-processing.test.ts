@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { SendGiftDeliveryEvent } from '../../../../core/server/services/gifts/events/send-gift-delivery-event';
 
 const DomainEvents = require('@tryghost/domain-events');
-const MailgunClient = require('../../../../core/server/services/lib/mailgun-client');
+const CloudflareEmailClient = require('../../../../core/server/services/lib/cloudflare-email-client');
 const models = require('../../../../core/server/models');
 const { agentProvider, fixtureManager, mockManager } = require('../../../utils/e2e-framework');
 
@@ -21,8 +21,10 @@ describe('Gift delivery processing', function () {
   });
 
   beforeEach(function () {
-    sinon.stub(MailgunClient.prototype, 'isConfigured').returns(true);
-    deliverySend = sinon.stub(MailgunClient.prototype, 'send').resolves({ id: '<provider-123>' });
+    sinon.stub(CloudflareEmailClient.prototype, 'isConfigured').returns(true);
+    deliverySend = sinon
+      .stub(CloudflareEmailClient.prototype, 'send')
+      .resolves({ id: '<provider-123>' });
   });
 
   afterEach(async function () {

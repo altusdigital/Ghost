@@ -172,12 +172,12 @@ describe('schema commands', function () {
         },
       };
 
-      await commands.renameColumn('email_batches', 'provider_id', 'mailgun_message_id', fakeKnex, {
+      await commands.renameColumn('email_batches', 'provider_id', 'provider_message_id', fakeKnex, {
         algorithm: 'instant',
       });
 
       assert.deepEqual(rawStatements, [
-        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `mailgun_message_id`, algorithm=instant',
+        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `provider_message_id`, algorithm=instant',
       ]);
     });
 
@@ -219,13 +219,13 @@ describe('schema commands', function () {
         },
       };
 
-      await commands.renameColumn('email_batches', 'provider_id', 'mailgun_message_id', fakeKnex, {
+      await commands.renameColumn('email_batches', 'provider_id', 'provider_message_id', fakeKnex, {
         algorithm: 'instant',
       });
 
       assert.deepEqual(rawStatements, [
-        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `mailgun_message_id`, algorithm=instant',
-        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `mailgun_message_id`',
+        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `provider_message_id`, algorithm=instant',
+        'ALTER TABLE `email_batches` RENAME COLUMN `provider_id` TO `provider_message_id`',
       ]);
     });
 
@@ -243,7 +243,7 @@ describe('schema commands', function () {
       };
 
       await assert.rejects(
-        commands.renameColumn('email_batches', 'provider_id', 'mailgun_message_id', fakeKnex, {
+        commands.renameColumn('email_batches', 'provider_id', 'provider_message_id', fakeKnex, {
           algorithm: 'instant',
         }),
         /doesn't exist/,

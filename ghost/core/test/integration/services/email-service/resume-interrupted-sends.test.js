@@ -64,7 +64,7 @@ describe('Resume interrupted sends', function () {
     //    the other did; the parent email row is stuck in `submitting`.
     const [batchA, batchB] = batches;
     await batchB.save(
-      { status: 'pending', mailgun_message_id: null },
+      { status: 'pending', provider_message_id: null },
       { patch: true, autoRefresh: false },
     );
     await emailModel.save({ status: 'submitting' }, { patch: true, autoRefresh: false });
@@ -153,7 +153,7 @@ describe('Resume interrupted sends', function () {
 
     const [batchA, batchB] = batches;
     // batchA: stays submitted (already accepted by Mailgun on the original run)
-    // batchB: flipped to submitting (orphan from crash) — mailgun_message_id intentionally preserved
+    // batchB: flipped to submitting (orphan from crash) — provider_message_id intentionally preserved
     //          so the breadcrumb in the runbook still cross-references against Mailgun.
     await batchB.save({ status: 'submitting' }, { patch: true, autoRefresh: false });
     await emailModel.save({ status: 'submitting' }, { patch: true, autoRefresh: false });

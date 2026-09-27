@@ -7,6 +7,7 @@ const PreviewRouter = require('./preview-router');
 const ParentRouter = require('./parent-router');
 const EmailRouter = require('./email-router');
 const UnsubscribeRouter = require('./unsubscribe-router');
+const EmailOpenRouter = require('./email-open-router');
 
 // Frontend-internal routing domain events (RouteRegistered / RoutesReset)
 const routingEvents = require('./events');
@@ -105,6 +106,10 @@ class RouterManager {
     const unsubscribeRouter = new UnsubscribeRouter();
     this.siteRouter.mountRouter(unsubscribeRouter.router());
     this.registry.setRouter('unsubscribeRouter', unsubscribeRouter);
+
+    const emailOpenRouter = new EmailOpenRouter();
+    this.siteRouter.mountRouter(emailOpenRouter.router());
+    this.registry.setRouter('emailOpenRouter', emailOpenRouter);
 
     if (RESOURCE_CONFIG.QUERY.email) {
       const emailRouter = new EmailRouter(RESOURCE_CONFIG);

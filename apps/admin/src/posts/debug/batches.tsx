@@ -11,7 +11,11 @@ import {
   TableRow,
 } from '@tryghost/shade/components';
 import { Stack, Text } from '@tryghost/shade/primitives';
-import { formatNumber } from '@tryghost/shade/utils';
+import { formatNumber as shadeFormatNumber } from '@tryghost/shade/utils';
+
+// Shade's published types are not always present in this workspace, so the
+// utility arrives as `any`. Cast once so calls stay checked.
+const formatNumber = shadeFormatNumber as (value: number) => string;
 import { formatDebugDate, statusLabel } from './format';
 
 const STATUS_BADGE = {
@@ -102,16 +106,16 @@ export default function Batches({
               </TableCell>
               <TableCell className="max-w-xl break-words whitespace-normal">
                 <Stack gap="sm">
-                  {batch.mailgun_message_id && (
+                  {batch.provider_message_id && (
                     <span>
-                      Provider id: <code>{batch.mailgun_message_id}</code>
+                      Provider id: <code>{batch.provider_message_id}</code>
                     </span>
                   )}
                   {!!batch.error_status_code && (
                     <span>Failure status code: {batch.error_status_code}</span>
                   )}
                   {batch.error_message && <BatchError message={batch.error_message} />}
-                  {!batch.mailgun_message_id &&
+                  {!batch.provider_message_id &&
                     !batch.error_status_code &&
                     !batch.error_message &&
                     'N/A'}

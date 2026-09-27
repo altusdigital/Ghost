@@ -226,7 +226,7 @@ describe('EmailAnalyticsJobScheduler', function () {
     });
     sinon.assert.calledOnce(models.AutomatedEmailRecipient.query);
     sinon.assert.calledOnceWithExactly(automationsQuery.where, 'created_at', '>', sinon.match.date);
-    sinon.assert.calledOnceWithExactly(automationsQuery.whereNotNull, 'mailgun_message_id');
+    sinon.assert.calledOnceWithExactly(automationsQuery.whereNotNull, 'provider_message_id');
     sinon.assert.calledOnceWithExactly(automationsQuery.first, 'id');
   });
 

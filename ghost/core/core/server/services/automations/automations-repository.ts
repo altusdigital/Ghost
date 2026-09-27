@@ -86,7 +86,7 @@ export type EditAutomationData = {
 
 export type AutomatedEmailRecipientWithMailgunId = {
   id: string;
-  mailgun_message_id: string;
+  provider_message_id: string;
   automation_action_revision_id: string;
 };
 

@@ -92,11 +92,11 @@ export function assemblePublishInputs(boundaryData: {
   }
   const roles = new Set(currentUser.roles.map((role) => role.name));
 
-  // Both sources count: self-hosters configure Mailgun in settings, hosts inject it via config.
+  // Both sources count: self-hosters configure Cloudflare Email in settings, hosts inject it via config.
   const configuredInSettings = Boolean(
-    stringSetting(settings, 'mailgun_api_key') &&
-    stringSetting(settings, 'mailgun_domain') &&
-    stringSetting(settings, 'mailgun_base_url'),
+    stringSetting(settings, 'cloudflare_api_token') &&
+    stringSetting(settings, 'cloudflare_account_id') &&
+    stringSetting(settings, 'cloudflare_sending_domain'),
   );
 
   return {

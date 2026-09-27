@@ -100,7 +100,7 @@ export class EmailAnalyticsJobScheduler {
         Boolean(
           await this.#models.AutomatedEmailRecipient.query()
             .where('created_at', '>', thirtyDaysAgo())
-            .whereNotNull('mailgun_message_id')
+            .whereNotNull('provider_message_id')
             .first('id'),
         ),
     );

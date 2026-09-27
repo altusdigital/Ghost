@@ -480,6 +480,22 @@
             "defaultValue": null,
             "type": "string"
         },
+        "cloudflare_account_id": {
+            "defaultValue": null,
+            "type": "string"
+        },
+        "cloudflare_api_token": {
+            "defaultValue": null,
+            "type": "string"
+        },
+        "cloudflare_zone_id": {
+            "defaultValue": null,
+            "type": "string"
+        },
+        "cloudflare_sending_domain": {
+            "defaultValue": null,
+            "type": "string"
+        },
         "mailgun_base_url": {
             "defaultValue": null,
             "type": "string"
