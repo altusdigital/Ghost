@@ -3,7 +3,7 @@ import { Inline, Stack, Text } from '@tryghost/shade/primitives';
 import { publishTypeError as publishTypeErrorTestId } from '@tryghost/test-data/selectors/editor';
 import type { PublishOptionsState, PublishType } from '@/editor/publish/publish-options';
 
-const MAILGUN_DOCS = 'https://docs.ghost.org/newsletters/#bulk-email-configuration';
+const CLOUDFLARE_EMAIL_DOCS = 'https://developers.cloudflare.com/email-service/';
 
 export interface PublishTypeOptionsProps {
   state: PublishOptionsState;
@@ -36,8 +36,13 @@ function EmailUnavailableNote({ state }: { state: PublishOptionsState }) {
     return (
       <Text data-testid={publishTypeErrorTestId} size="sm">
         Set up{' '}
-        <a className="underline" href={MAILGUN_DOCS} rel="noreferrer noopener" target="_blank">
-          Mailgun
+        <a
+          className="underline"
+          href={CLOUDFLARE_EMAIL_DOCS}
+          rel="noreferrer noopener"
+          target="_blank"
+        >
+          Cloudflare Email
         </a>{' '}
         to start sending newsletters!
       </Text>

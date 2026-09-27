@@ -576,9 +576,10 @@ describe('Acceptance: Publish flow', function () {
 
             await click('[data-test-setting="publish-type"] [data-test-setting-title]');
 
-            // mailgun not set up notice is shown
+            // email provider not set up notice is shown
             expect(find('[data-test-publish-type-error]'), 'publish type error').to.exist;
-            expect(find('[data-test-publish-type-error="no-mailgun"]'), 'publish type error text').to.exist;
+            expect(find('[data-test-publish-type-error="no-mailgun"]'), 'publish type error text')
+                .to.contain.text('Set up Cloudflare Email to start sending newsletters!');
 
             // email-related options are disabled
             expect(find('[data-test-publish-type="publish+send"]')).to.have.attribute('disabled');

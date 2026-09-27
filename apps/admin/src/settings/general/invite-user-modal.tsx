@@ -160,7 +160,7 @@ function InviteUserModal() {
       if (e instanceof APIError) {
         const data = e.data as { errors?: Array<{ type?: string }> } | undefined;
         if (data?.errors?.[0]?.type === 'EmailError') {
-          message = <span>Check your Mailgun configuration.</span>;
+          message = <span>Check your Cloudflare Email configuration.</span>;
         }
       }
       toast.error(title, { description: message });
